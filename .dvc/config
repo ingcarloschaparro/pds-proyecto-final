@@ -1,0 +1,9 @@
+[core]
+    remote = myremote
+    autostage = true
+['remote "myremote"']
+    url = s3://pds-proyecto-final/data
+    endpointurl=https://s3.bhs.io.cloud.ovh.net
+    access_key_id=2d4f2da170494c9c8bd671b4c2b00dd1
+    secret_access_key=80b58fddab9c4d89bc6fa763d07fbac4
+
