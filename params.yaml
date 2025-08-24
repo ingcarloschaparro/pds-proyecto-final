@@ -1,0 +1,34 @@
+# Parámetros de configuración del proyecto
+
+# Configuración de datos
+data:
+  raw_path: "data/raw"
+  processed_path: "data/processed"
+  outputs_path: "data/outputs"
+  evaluation_path: "data/evaluation"
+
+# Configuración del modelo
+model:
+  classifier_type: "random_forest"
+  random_state: 42
+  test_size: 0.2
+  validation_size: 0.1
+
+# Configuración de entrenamiento
+training:
+  max_iter: 1000
+  learning_rate: 0.01
+  batch_size: 32
+
+# Configuración de generación de PLS
+pls:
+  max_length: 150
+  min_length: 50
+  num_beams: 4
+  temperature: 0.8
+
+# Configuración de evaluación
+evaluation:
+  metrics: ["rouge", "bleu", "meteor"]
+  save_predictions: true
+  generate_report: true

@@ -1,0 +1,40 @@
+stages:
+  prepare:
+    cmd: python src/data/make_dataset.py
+    deps:
+      - src/data/make_dataset.py
+      - data/raw
+    outs:
+      - data/processed:
+          persist: true
+          cache: true
+  
+  train:
+    cmd: python src/models/train_classifier.py
+    deps:
+      - src/models/train_classifier.py
+      - data/processed
+    outs:
+      - models:
+          persist: true
+          cache: true
+  
+  generate:
+    cmd: python src/models/generate_pls.py
+    deps:
+      - src/models/generate_pls.py
+      - models
+    outs:
+      - data/outputs:
+          persist: true
+          cache: true
+  
+  evaluate:
+    cmd: python src/models/evaluate.py
+    deps:
+      - src/models/evaluate.py
+      - data/outputs
+    outs:
+      - data/evaluation:
+          persist: true
+          cache: true

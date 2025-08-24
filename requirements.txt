@@ -1,0 +1,31 @@
+# Dependencias del proyecto
+
+# Procesamiento de datos
+pandas>=1.5.0
+numpy>=1.21.0
+scikit-learn>=1.1.0
+
+# Jupyter y notebooks
+jupyter>=1.0.0
+ipykernel>=6.0.0
+
+# Machine Learning y NLP
+transformers>=4.20.0
+torch>=1.12.0
+nltk>=3.7
+
+# Evaluación de modelos
+rouge-score>=0.1.2
+sacrebleu>=2.0.0
+
+# Utilidades
+pyyaml>=6.0
+click>=8.0.0
+tqdm>=4.64.0
+
+# Visualización
+matplotlib>=3.5.0
+seaborn>=0.11.0
+
+# DVC para versionado de datos
+dvc>=2.50.0
