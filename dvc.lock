@@ -1,0 +1,19 @@
+schema: '2.0'
+stages:
+  manifest:
+    cmd: python src/data/build_manifest.py
+    deps:
+    - path: data/raw
+      hash: md5
+      md5: 10850e4de407fe3bae5619e5c8dccbc6.dir
+      size: 207663120
+      nfiles: 65175
+    - path: src/data/build_manifest.py
+      hash: md5
+      md5: ad7e3ba9fb28f76a65bb23cc455ed64b
+      size: 1457
+    outs:
+    - path: data/processed/raw_manifest.csv
+      hash: md5
+      md5: 297889bfa912836ece8dabfead281db1
+      size: 10408395
