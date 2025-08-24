@@ -15,5 +15,26 @@ stages:
     outs:
     - path: data/processed/raw_manifest.csv
       hash: md5
-      md5: 297889bfa912836ece8dabfead281db1
+      md5: 2333c7527b76f33b4df3eeee4e19d5d7
       size: 10408395
+  preprocess:
+    cmd: python src/data/make_dataset.py
+    deps:
+    - path: data/raw
+      hash: md5
+      md5: 10850e4de407fe3bae5619e5c8dccbc6.dir
+      size: 207663120
+      nfiles: 65175
+    - path: src/data/make_dataset.py
+      hash: md5
+      md5: 0897f314378e1538d237b59099b6b24a
+      size: 10241
+    outs:
+    - path: data/processed/dataset_clean_v1.csv
+      hash: md5
+      md5: 03f690e8a3c4f25be844f62d93f5f6f8
+      size: 70960151
+    - path: data/processed/dataset_clean_v1.jsonl
+      hash: md5
+      md5: f1706c5d06394335de78ab9ec477c467
+      size: 93926117
