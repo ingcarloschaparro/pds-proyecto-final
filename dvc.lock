@@ -38,3 +38,23 @@ stages:
       hash: md5
       md5: f1706c5d06394335de78ab9ec477c467
       size: 93926117
+  split:
+    cmd: python src/data/split_dataset.py
+    deps:
+    - path: data/processed/dataset_clean_v1.csv
+      hash: md5
+      md5: 03f690e8a3c4f25be844f62d93f5f6f8
+      size: 70960151
+    - path: src/data/split_dataset.py
+      hash: md5
+      md5: 523fa451beb6e2165711742a0acecc04
+      size: 2926
+    outs:
+    - path: data/processed/test.csv
+      hash: md5
+      md5: f6ff9e594c4cdf347aba3dab2534ae17
+      size: 12688359
+    - path: data/processed/train.csv
+      hash: md5
+      md5: 22d90b6bf57abd63d6c2f8505b2c3315
+      size: 59914253

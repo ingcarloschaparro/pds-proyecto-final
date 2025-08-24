@@ -18,42 +18,13 @@ stages:
       - data/processed/dataset_clean_v1.csv
 
   split:
-    cmd: |
-      python - << 'PY'
-      import pandas as pd, pathlib
-      p = pathlib.Path("data/processed")
-      src = p / "dataset_clean_v1.csv"
-      df = pd.read_csv(src)
-
-      # Separamos respetando split original cuando exista
-      is_train = df["split"].astype(str).str.lower().eq("train")
-      is_test  = df["split"].astype(str).str.lower().eq("test")
-
-      df_train = df[is_train].copy()
-      df_test  = df[is_test].copy()
-
-      # Para filas sin split (unsplit), NO las movemos aquí; puedes decidir en otra iteración.
-      if not df_train.empty: df_train["split_method"] = "original"
-      if not df_test.empty:  df_test["split_method"]  = "original"
-
-      df_train.to_csv(p/"train.csv", index=False)
-      df_test.to_csv(p/"test.csv", index=False)
-
-      # (Opcional) tests por fuente para análisis
-      if "source_dataset" in df.columns:
-          for src_name in sorted(df["source_dataset"].dropna().unique()):
-              sub = df_test[df_test["source_dataset"].eq(src_name)]
-              if not sub.empty:
-                  sub.to_csv(p/f"test__{src_name}.csv", index=False)
-
-      print(f"train={len(df_train)}, test={len(df_test)}, total={len(df)}")
-      PY
+    cmd: python src/data/split_dataset.py
     deps:
+      - src/data/split_dataset.py
       - data/processed/dataset_clean_v1.csv
     outs:
       - data/processed/train.csv
       - data/processed/test.csv
-
 
   train:
     cmd: python src/models/train_classifier.py

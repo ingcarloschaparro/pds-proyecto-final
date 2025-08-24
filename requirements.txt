@@ -22,6 +22,9 @@ sacrebleu>=2.0.0
 pyyaml>=6.0
 click>=8.0.0
 tqdm>=4.64.0
+langdetect>=1.0.9   
+boto3>=1.26.0
+textstat>=0.7
 
 # Visualización
 matplotlib>=3.5.0
@@ -29,3 +32,4 @@ seaborn>=0.11.0
 
 # DVC para versionado de datos
 dvc>=2.50.0
+dvc[s3]>=3.50   # con soporte S3
