@@ -1,0 +1,3 @@
+"""
+Generate PLS summaries functionality.
+"""
