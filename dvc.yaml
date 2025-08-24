@@ -1,14 +1,21 @@
 stages:
-  prepare:
+
+  manifest:
+    cmd: python src/data/build_manifest.py
+    deps:
+      - src/data/build_manifest.py
+      - data/raw
+    outs:
+      - data/processed/raw_manifest.csv
+  preprocess:
     cmd: python src/data/make_dataset.py
     deps:
       - src/data/make_dataset.py
       - data/raw
     outs:
-      - data/processed:
-          persist: true
-          cache: true
-  
+      - data/processed/dataset_clean_v1.csv
+      - data/processed/dataset_clean_v1.jsonl
+
   train:
     cmd: python src/models/train_classifier.py
     deps:
