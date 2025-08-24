@@ -205,3 +205,22 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+
+# Datos grandes: manejados solo por DVC
+data/raw/
+data/processed/
+data/outputs/
+data/evaluation/
+
+# Cache de DVC
+.dvc/cache/
+
+# Cosas de Python
+__pycache__/
+*.pyc
+.venv/
+
+# Archivos temporales / del sistema
+.DS_Store
+Thumbs.db
