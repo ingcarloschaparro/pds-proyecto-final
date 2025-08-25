@@ -27,17 +27,17 @@ stages:
       nfiles: 65175
     - path: src/data/make_dataset.py
       hash: md5
-      md5: 0897f314378e1538d237b59099b6b24a
-      size: 10241
+      md5: 2deb0077ea56d3c67e0388a552805f3f
+      size: 13037
     outs:
     - path: data/processed/dataset_clean_v1.csv
       hash: md5
-      md5: 03f690e8a3c4f25be844f62d93f5f6f8
-      size: 70960151
+      md5: 3cdb43858306406366c203354ab53318
+      size: 72127250
     - path: data/processed/dataset_clean_v1.jsonl
       hash: md5
-      md5: f1706c5d06394335de78ab9ec477c467
-      size: 93926117
+      md5: bbcfe7791e2da0cfeb03c5b6aff2e41d
+      size: 97502945
   split:
     cmd: python src/data/split_dataset.py
     deps:

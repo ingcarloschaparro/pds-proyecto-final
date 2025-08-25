@@ -1,34 +1,54 @@
 # src/data/make_dataset.py
 """
 Crea el dataset limpio y unificado a partir de data/raw:
-- Ignora PDFs (solo procesa TXT/CSV/JSON/JSONL) para Entrega 1.
+- Procesa TXT/CSV/JSON/JSONL y omite PDFs (Entrega 1).
 - Infere metadatos desde la ruta: source_dataset, source_bucket, split, label.
+- Maneja TXT con:
+    * pares "TEXTO ||| PLS"  -> has_pair = True
+    * PLS sueltos (carpetas 'pls/') -> resumen = texto, texto_original = ""
+    * non-PLS sueltos (carpetas 'non_pls/') -> texto_original = texto, resumen = ""
+- Amplía columnas candidatas para CSV/JSON (p.ej., plain_language_summary).
+- Filtra calidad si existe longitud mínima en texto_original **o** resumen.
 - Deduplica por hash de (texto_original || resumen).
-- Escribe JSONL en streaming y luego deriva CSV (columnas estandarizadas).
+- Escribe JSONL en streaming y luego deriva CSV.
 """
 
 from __future__ import annotations
-import csv, json, hashlib, unicodedata, sys
+import csv
+import json
+import sys
+import hashlib
+import unicodedata
 from pathlib import Path
-from typing import Dict, Iterable, Iterator, List, Tuple
+from typing import Dict, Iterator, List, Tuple
 
 RAW = Path("data/raw")
 PROC = Path("data/processed")
 PROC.mkdir(parents=True, exist_ok=True)
 
-# Procesamos SOLO formatos textuales directos para esta entrega
+# --- Configuración ---
+# Formatos textuales admitidos (Entrega 1):
 ALLOWED_SUFFIXES = {".txt", ".csv", ".json", ".jsonl"}
-SKIP_SUFFIXES = {".pdf"}   # explícito
+SKIP_SUFFIXES = {".pdf"}  # explícito
 
 # Heurísticas de columnas en CSV/JSON
-TEXT_CANDIDATES = {"texto","text","source","article","document","original","input","content","body"}
-PLS_CANDIDATES  = {"resumen","summary","pls","simple","plain_language","simplified"}
+TEXT_CANDIDATES = {
+    "texto", "text", "source", "article", "document", "original", "input",
+    "content", "body", "source_text", "original_text", "full_text", "document_text"
+}
+PLS_CANDIDATES = {
+    "resumen", "summary", "pls", "simple", "plain_language", "simplified",
+    "plain_language_summary", "plainlanguage", "lay_summary", "plain_summary", "pls_text"
+}
 
-# Filtros simples de calidad (ajusta si hace falta)
+# Filtros simples de calidad
 MIN_LEN_TEXT = 30
 MAX_LEN_TEXT = 20000
 
+
+# ----------------- Utilidades -----------------
 def norm(s: str) -> str:
+    """Normaliza unicode, colapsa espacios y homogeneiza saltos de línea."""
     if s is None:
         return ""
     if not isinstance(s, str):
@@ -38,36 +58,36 @@ def norm(s: str) -> str:
     s = " ".join(s.split())
     return s.strip()
 
-def valid_text(s: str) -> bool:
-    n = len(s)
-    return (n >= MIN_LEN_TEXT) and (n <= MAX_LEN_TEXT)
 
 def pick_columns(header: List[str]) -> Tuple[str, str]:
+    """Intenta adivinar columnas (texto, resumen) en CSV/JSON por nombres conocidos."""
     lower = [h.lower().strip() for h in header]
     text_col = ""
-    pls_col  = ""
+    pls_col = ""
     for c in lower:
         if not text_col and c in TEXT_CANDIDATES:
             text_col = c
         if not pls_col and c in PLS_CANDIDATES:
             pls_col = c
-    # fallback por posición
+    # fallback por posición si no encontró nombres "amigables"
     if not text_col and lower:
         text_col = lower[0]
     if not pls_col and len(lower) > 1:
         pls_col = lower[1]
     return text_col, pls_col
 
+
 def infer_meta_from_path(fp: Path):
     """
-    Infere:
-      - source_dataset: top-level (cochrane | pfizer | trialsummaries | clinicaltrials | otro)
-      - source_bucket: subcarpeta significativa (p.ej. train/pls, test/non_pls, original_texts, etc.)
+    Infere metadatos desde la ruta del archivo:
+      - source_dataset: cochrane | pfizer | trialsummaries | clinicaltrials | otro
+      - source_bucket: subcarpeta informativa (ej., train/pls, test/non_pls, original_texts, ...)
       - split: train | test | unsplit
       - label: pls | non_pls | "" (si no aplica)
     """
     parts = [p.lower() for p in fp.parts]
-    # dataset top-level: busca el primer directorio debajo de data/raw
+
+    # dataset top-level: buscar el primer directorio debajo de data/raw
     source_dataset = ""
     try:
         raw_idx = parts.index("raw")
@@ -76,18 +96,19 @@ def infer_meta_from_path(fp: Path):
     except ValueError:
         pass
 
-    # bucket/subruta informativa
-    # ej: raw/cochrane/train/pls/...  -> "train/pls"
-    #     raw/trialsummaries/original_texts/... -> "original_texts"
+    # bucket/subruta informativa (entre el dataset y el archivo)
     source_bucket = ""
     if source_dataset:
         start = parts.index(source_dataset) + 1
         if start < len(parts) - 1:  # hay algo entre dataset y archivo
             source_bucket = "/".join(parts[start:-1])
 
+    # split y label por palabras clave en la ruta
     split = "unsplit"
-    if "train" in parts: split = "train"
-    if "test"  in parts: split = "test"
+    if "train" in parts:
+        split = "train"
+    if "test" in parts:
+        split = "test"
 
     label = ""
     if "pls" in parts:
@@ -108,7 +129,17 @@ def infer_meta_from_path(fp: Path):
 
     return source_dataset, source_bucket, split, label
 
+
+# ----------------- Parsers por tipo -----------------
 def iter_txt(fp: Path) -> Iterator[Dict[str, str]]:
+    """
+    Lee .txt línea por línea.
+    Reglas:
+      - Si hay 'TEXTO ||| PLS' -> construye par (has_pair=True).
+      - Si NO hay '|||' y la ruta sugiere carpeta PLS -> resumen = texto (has_pair=False).
+      - Si NO hay '|||' y sugiere NON_PLS -> texto_original = texto (has_pair=False).
+      - Otros casos -> texto_original = texto (has_pair=False).
+    """
     source_dataset, source_bucket, split, label = infer_meta_from_path(fp)
     for i, line in enumerate(fp.read_text(encoding="utf-8", errors="ignore").splitlines()):
         if not line.strip():
@@ -124,21 +155,40 @@ def iter_txt(fp: Path) -> Iterator[Dict[str, str]]:
                 "label": label,
                 "source_dataset": source_dataset,
                 "source_bucket": source_bucket,
+                "has_pair": True,
             }
         else:
             txt = norm(line)
-            yield {
-                "texto_original": txt,
-                "resumen": "",
-                "source": fp.parent.name,
-                "doc_id": f"{fp.name}#L{i+1}",
-                "split": split,
-                "label": label,
-                "source_dataset": source_dataset,
-                "source_bucket": source_bucket,
-            }
+            if label == "pls":
+                # PLS “suelto”
+                yield {
+                    "texto_original": "",
+                    "resumen": txt,
+                    "source": fp.parent.name,
+                    "doc_id": f"{fp.name}#L{i+1}",
+                    "split": split,
+                    "label": label,
+                    "source_dataset": source_dataset,
+                    "source_bucket": source_bucket,
+                    "has_pair": False,
+                }
+            else:
+                # Non-PLS u otros casos
+                yield {
+                    "texto_original": txt,
+                    "resumen": "",
+                    "source": fp.parent.name,
+                    "doc_id": f"{fp.name}#L{i+1}",
+                    "split": split,
+                    "label": label,
+                    "source_dataset": source_dataset,
+                    "source_bucket": source_bucket,
+                    "has_pair": False,
+                }
+
 
 def iter_csv(fp: Path) -> Iterator[Dict[str, str]]:
+    """Lee .csv intentando detectar columnas de texto/resumen por heurística."""
     import pandas as pd
     source_dataset, source_bucket, split, label = infer_meta_from_path(fp)
     for enc in ("utf-8", "latin1"):
@@ -153,7 +203,7 @@ def iter_csv(fp: Path) -> Iterator[Dict[str, str]]:
     tcol, pcol = pick_columns(df.columns.tolist())
     for i, row in df.iterrows():
         texto = norm(row.get(tcol, ""))
-        pls   = norm(row.get(pcol, ""))
+        pls = norm(row.get(pcol, ""))
         if not texto and not pls:
             continue
         yield {
@@ -165,9 +215,12 @@ def iter_csv(fp: Path) -> Iterator[Dict[str, str]]:
             "label": label,
             "source_dataset": source_dataset,
             "source_bucket": source_bucket,
+            "has_pair": bool(texto and pls),
         }
 
+
 def iter_jsonl(fp: Path) -> Iterator[Dict[str, str]]:
+    """Lee .jsonl (un objeto por línea)."""
     source_dataset, source_bucket, split, label = infer_meta_from_path(fp)
     with fp.open("r", encoding="utf-8", errors="ignore") as f:
         for i, line in enumerate(f):
@@ -180,7 +233,7 @@ def iter_jsonl(fp: Path) -> Iterator[Dict[str, str]]:
             keys = list(obj.keys())
             tcol, pcol = pick_columns(keys)
             texto = norm(obj.get(tcol, ""))
-            pls   = norm(obj.get(pcol, ""))
+            pls = norm(obj.get(pcol, ""))
             if not texto and not pls:
                 continue
             yield {
@@ -192,9 +245,12 @@ def iter_jsonl(fp: Path) -> Iterator[Dict[str, str]]:
                 "label": label,
                 "source_dataset": source_dataset,
                 "source_bucket": source_bucket,
+                "has_pair": bool(texto and pls),
             }
 
+
 def iter_json(fp: Path) -> Iterator[Dict[str, str]]:
+    """Lee .json como lista de objetos o un solo objeto."""
     source_dataset, source_bucket, split, label = infer_meta_from_path(fp)
     try:
         data = json.loads(fp.read_text(encoding="utf-8", errors="ignore"))
@@ -209,7 +265,7 @@ def iter_json(fp: Path) -> Iterator[Dict[str, str]]:
         tcol, pcol = pick_columns(keys)
         for i, obj in enumerate(data):
             texto = norm(obj.get(tcol, ""))
-            pls   = norm(obj.get(pcol, ""))
+            pls = norm(obj.get(pcol, ""))
             if not texto and not pls:
                 continue
             yield {
@@ -221,8 +277,11 @@ def iter_json(fp: Path) -> Iterator[Dict[str, str]]:
                 "label": label,
                 "source_dataset": source_dataset,
                 "source_bucket": source_bucket,
+                "has_pair": bool(texto and pls),
             }
 
+
+# ----------------- Iterador maestro -----------------
 def parse_files() -> Iterator[Dict[str, str]]:
     for fp in RAW.rglob("*"):
         if not fp.is_file():
@@ -242,16 +301,27 @@ def parse_files() -> Iterator[Dict[str, str]]:
         except Exception as e:
             print(f"[WARN] Skipping {fp}: {e}", file=sys.stderr)
 
-def quality_ok(r: Dict[str, str]) -> bool:
-    txt = r.get("texto_original", "")
-    if not valid_text(txt):
-        return False
-    return True
 
-def save_streaming_jsonl(stem="dataset_clean_v1"):
+# ----------------- Filtros y escritura -----------------
+def quality_ok(r: Dict[str, str]) -> bool:
+    """Acepta filas con texto OR resumen (longitud mínima en cualquiera)."""
+    txt = (r.get("texto_original", "") or "").strip()
+    pls = (r.get("resumen", "") or "").strip()
+    if txt and not (MIN_LEN_TEXT <= len(txt) <= MAX_LEN_TEXT):
+        txt_ok = False
+    else:
+        txt_ok = bool(txt)
+    if pls and not (MIN_LEN_TEXT <= len(pls) <= MAX_LEN_TEXT):
+        pls_ok = False
+    else:
+        pls_ok = bool(pls)
+    return txt_ok or pls_ok
+
+
+def save_streaming_jsonl(stem: str = "dataset_clean_v1") -> Path:
     """
-    Escritura en streaming a JSONL con deduplicación.
-    Luego, una pasada para derivar CSV.
+    Escribe JSONL en streaming con deduplicación (hash de texto||resumen).
+    Devuelve la ruta al JSONL resultante.
     """
     out_jsonl = PROC / f"{stem}.jsonl"
     seen = set()
@@ -263,7 +333,7 @@ def save_streaming_jsonl(stem="dataset_clean_v1"):
             total += 1
             if not quality_ok(r):
                 continue
-            key = (r["texto_original"] + "||" + r.get("resumen", "")).encode("utf-8")
+            key = (r.get("texto_original", "") + "||" + r.get("resumen", "")).encode("utf-8")
             h = hashlib.sha256(key).hexdigest()
             if h in seen:
                 continue
@@ -271,26 +341,31 @@ def save_streaming_jsonl(stem="dataset_clean_v1"):
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
             kept += 1
 
-    print(f"[OK] wrote {out_jsonl}  total_seen={total}  kept={kept}  deduped={total-kept}")
+    print(f"[OK] wrote {out_jsonl}  total_seen={total}  kept={kept}  deduped={total - kept}")
     return out_jsonl
 
-def jsonl_to_csv(jsonl_path: Path, stem="dataset_clean_v1"):
+
+def jsonl_to_csv(jsonl_path: Path, stem: str = "dataset_clean_v1") -> Path:
+    """Convierte el JSONL a CSV con columnas estandarizadas (usando pandas)."""
     import pandas as pd
     df = pd.read_json(jsonl_path, lines=True)
 
-    # Orden sugerido de columnas (incluye metadatos nuevos)
     cols = [c for c in [
-        "texto_original","resumen","source","doc_id","split","label",
-        "source_dataset","source_bucket"
+        "texto_original", "resumen", "source", "doc_id", "split", "label",
+        "source_dataset", "source_bucket", "has_pair"
     ] if c in df.columns]
 
     out_csv = PROC / f"{stem}.csv"
     df.to_csv(out_csv, index=False, columns=cols)
     print(f"[OK] wrote {out_csv} (rows={len(df)})")
+    return out_csv
 
+
+# ----------------- Main -----------------
 def main():
     jl = save_streaming_jsonl("dataset_clean_v1")
     jsonl_to_csv(jl, "dataset_clean_v1")
+
 
 if __name__ == "__main__":
     main()
