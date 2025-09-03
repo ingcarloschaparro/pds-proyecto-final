@@ -1,7 +1,7 @@
 
-# �� PLAN DE TRABAJO TÉCNICO - PROYECTO PLS
+#  PLAN DE TRABAJO TÉCNICO - PROYECTO PLS
 
-## �� **RESUMEN EJECUTIVO**
+## **RESUMEN EJECUTIVO**
 
 El proyecto actual tiene una **arquitectura sólida** con pipeline DVC funcional y datos procesados, pero los **scripts de modelos están vacíos** y falta implementación de MLflow, dashboard y documentación completa. El dataset tiene **182,753 registros** con solo **27% de datos anotados** (PLS), lo que requiere estrategias específicas para datos limitados.
 
