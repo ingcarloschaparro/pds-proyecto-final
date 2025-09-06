@@ -239,7 +239,7 @@ Thumbs.db
 *.md
 
 # Modelos entrenados
-models/
+/models/
 *.safetensors
 *.bin
 *.pt
