@@ -142,6 +142,7 @@ class MLflowManager:
             config = {
                 "modelo": "TF-IDF + Logistic Regression",
                 "fecha_entrenamiento": datetime.now().isoformat(),
+                
                 "parametros_modelo": parametros or {},
                 "metricas_principales": {
                     "f1_macro": f1_macro,
