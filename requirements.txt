@@ -33,3 +33,11 @@ seaborn>=0.11.0
 # DVC para versionado de datos
 dvc>=2.50.0
 dvc[s3]>=3.50   # con soporte S3
+
+# Generador PLS - Nuevas dependencias
+peft>=0.4.0
+accelerate>=0.20.0
+evaluate>=0.4.0
+bert-score>=0.3.13
+mlflow>=2.8.0
+typer>=0.9.0

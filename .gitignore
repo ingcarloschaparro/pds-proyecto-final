@@ -224,3 +224,31 @@ __pycache__/
 # Archivos temporales / del sistema
 .DS_Store
 Thumbs.db
+
+
+*.csv
+*.json
+*.jsonl
+*.txt
+*.pdf
+*.docx
+*.doc
+*.xls
+*.xlsx
+
+*.md
+
+# Modelos entrenados
+models/
+*.safetensors
+*.bin
+*.pt
+*.pkl
+
+# MLflow runs locales
+mlruns/
+
+# Datos pesados
+data/outputs/
+*.csv
+*.jsonl
