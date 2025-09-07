@@ -230,7 +230,7 @@ class PLSDashboard:
                 st.metric("Fuentes", "N/A")
 
         # Gráficos
-        st.markdown('<h3 class="subsection-header">Distribucion de Datos</h3>', unsafe_allow_html=True)
+        st.markdown('<h3 class="subsection-header">Distribución de Datos</h3>', unsafe_allow_html=True)
 
         col1, col2 = st.columns(2)
 
@@ -767,7 +767,7 @@ class PLSDashboard:
     def render_footer(self):
         """Renderizar footer"""
         st.markdown("---")
-        st.markdown("""<div style="text-align: center; color: #666; margin-top: 2rem;"> <p><strong>Plain Language Summarizer Dashboard</strong></p> <p>Proyecto de Maestria - Universidad de los Andes | Desarrollado con dedicacion</p> <p>Última actualización: {}</p> </div>""".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S')), unsafe_allow_html=True)
+        st.markdown("""<div style="text-align: center; color: #666; margin-top: 2rem;"> <p><strong>Plain Language Summarizer Dashboard</strong></p> <p>Proyecto de Maestria - Universidad de los Andes | Desarrollado con dedicacion por Equipo CJEG</p> <p>Última actualización: {}</p> </div>""".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S')), unsafe_allow_html=True)
 
     def run(self):
         """Ejecutar dashboard completo"""
@@ -786,7 +786,35 @@ class PLSDashboard:
 
         # Contenido principal
         if page == "Inicio":
-            st.markdown("""## Bienvenido al Dashboard PLS Este dashboard interactivo te permite: ### **Analizar Datos** - Explorar el dataset de textos médicos - Visualizar distribuciones y estadísticas - Entender la composición de los datos ### **Comparar Modelos** - Ver métricas de rendimiento de todos los modelos PLS - Comparar velocidad, calidad y eficiencia - Identificar el mejor modelo para cada caso ### **Explorar Experimentos** - Navegar por todos los experimentos MLflow - Revisar métricas detalladas por run - Analizar evolución temporal ### **Probar en Vivo** - Generar PLS interactivamente - Comparar diferentes modelos - Ver métricas en tiempo real --- ** Comienza explorando la sección de Datos para familiarizarte con el proyecto.**""")
+            st.markdown("""
+## Bienvenido al Dashboard PLS
+
+Este dashboard interactivo te permite:
+
+### **Analizar Datos**
+- Explorar el dataset de textos médicos
+- Visualizar distribuciones y estadísticas
+- Entender la composición de los datos
+
+### **Comparar Modelos**
+- Ver métricas de rendimiento de todos los modelos PLS
+- Comparar velocidad, calidad y eficiencia
+- Identificar el mejor modelo para cada caso
+
+### **Explorar Experimentos**
+- Navegar por todos los experimentos MLflow
+- Revisar métricas detalladas por run
+- Analizar evolución temporal
+
+### **Probar en Vivo**
+- Generar PLS interactivamente
+- Comparar diferentes modelos
+- Ver métricas en tiempo real
+
+---
+
+**Comienza explorando la sección de Datos para familiarizarte con el proyecto.**
+""")
 
         elif page == "Datos":
             self.render_data_overview()
