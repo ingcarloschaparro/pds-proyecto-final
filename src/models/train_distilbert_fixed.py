@@ -80,7 +80,7 @@ def preparar_datos_distilbert(
     # Procesar datos PLS y non-PLS
     for _, row in df_valid.iterrows():
         # Para PLS: usar el resumen como feature
-        if row["label"] == "por favor":
+        if row["label"] == "pls":
             resumen = row["resumen"]
             if pd.isna(resumen):
                 texto = ""
@@ -127,7 +127,7 @@ def entrenar_distilbert(
     learning_rate: float = 2e-5,
     max_length: int = 256,
 ) -> Dict[str, Any]:
-    """Entrena modelo DistilBERT para clasificación Args: X_train, y_train: Datos de entrenamiento X_test, y_test: Datos de validación model_name: Nombre del modelo pre-entrenado batch_size: Tamaño del batch epochs: Número de épocas learning_rate: Tasa de aprendizaje max_length: Longitud máxima de secuencia Returns: Diccionario con modelo, métricas si tokenizer"""
+    """Entrena modelo DistilBERT para clasificación con logging MLflow"""
 
     with mlflow.start_run():
         # Loggear parámetros
@@ -159,57 +159,94 @@ def entrenar_distilbert(
         )
         model.to(device)
 
-    # Crear datasets
-    train_dataset = TextClassificationDataset(X_train, y_train, tokenizer, max_length)
-    test_dataset = TextClassificationDataset(X_test, y_test, tokenizer, max_length)
+        # Crear datasets
+        train_dataset = TextClassificationDataset(X_train, y_train, tokenizer, max_length)
+        test_dataset = TextClassificationDataset(X_test, y_test, tokenizer, max_length)
 
-    # Crear dataloaders
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+        # Crear dataloaders
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+        test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
-    # Configurar optimizador y scheduler
-    optimizer = AdamW(model.parameters(), lr=learning_rate, eps=1e-8)
-    total_steps = len(train_loader) * epochs
-    scheduler = get_linear_schedule_with_warmup(
-        optimizer, num_warmup_steps=0, num_training_steps=total_steps
-    )
+        # Configurar optimizador y scheduler
+        optimizer = AdamW(model.parameters(), lr=learning_rate, eps=1e-8)
+        total_steps = len(train_loader) * epochs
+        scheduler = get_linear_schedule_with_warmup(
+            optimizer, num_warmup_steps=0, num_training_steps=total_steps
+        )
 
-    # Entrenamiento
-    model.train()
-    best_f1 = 0
-    best_model_state = None
-
-    for epoch in range(epochs):
-        print(f"\nEpoch {epoch + 1}/{epochs}")
-        total_loss = 0
+        # Entrenamiento
         model.train()
+        best_f1 = 0
+        best_model_state = None
 
-        for batch in train_loader:
-            optimizer.zero_grad()
+        for epoch in range(epochs):
+            print(f"\nEpoch {epoch + 1}/{epochs}")
+            total_loss = 0
+            model.train()
 
-            input_ids = batch["input_ids"].to(device)
-            attention_mask = batch["attention_mask"].to(device)
-            labels = batch["labels"].to(device)
+            for batch in train_loader:
+                optimizer.zero_grad()
 
-            outputs = model(
-                input_ids=input_ids, attention_mask=attention_mask, labels=labels
-            )
+                input_ids = batch["input_ids"].to(device)
+                attention_mask = batch["attention_mask"].to(device)
+                labels = batch["labels"].to(device)
 
-            loss = outputs.loss
-            total_loss += loss.item()
+                outputs = model(
+                    input_ids=input_ids, attention_mask=attention_mask, labels=labels
+                )
 
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-            optimizer.step()
-            scheduler.step()
+                loss = outputs.loss
+                total_loss += loss.item()
 
-        avg_loss = total_loss / len(train_loader)
-        print(".4f")
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+                optimizer.step()
+                scheduler.step()
 
-        # Evaluación en validación
+            avg_loss = total_loss / len(train_loader)
+            print(f"Pérdida promedio: {avg_loss:.4f}")
+            
+            # Loggear pérdida por época
+            mlflow.log_metric(f"train_loss_epoch_{epoch+1}", avg_loss)
+
+            # Evaluación en validación
+            model.eval()
+            val_preds = []
+            val_labels = []
+
+            with torch.no_grad():
+                for batch in test_loader:
+                    input_ids = batch["input_ids"].to(device)
+                    attention_mask = batch["attention_mask"].to(device)
+                    labels = batch["labels"].to(device)
+
+                    outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+                    preds = torch.argmax(outputs.logits, dim=1)
+
+                    val_preds.extend(preds.cpu().numpy())
+                    val_labels.extend(labels.cpu().numpy())
+
+            # Calcular métricas
+            val_f1 = f1_score(val_labels, val_preds, average="macro")
+            print(f"F1-Score validación: {val_f1:.4f}")
+            
+            # Loggear métricas por época
+            mlflow.log_metric(f"val_f1_epoch_{epoch+1}", val_f1)
+
+            # Guardar mejor modelo
+            if val_f1 > best_f1:
+                best_f1 = val_f1
+                best_model_state = model.state_dict().copy()
+
+        # Cargar mejor modelo
+        model.load_state_dict(best_model_state)
+
+        # Evaluación final
+        print("\n=== EVALUACIÓN FINAL ===")
         model.eval()
-        val_preds = []
-        val_labels = []
+        all_preds = []
+        all_labels = []
+        all_probs = []
 
         with torch.no_grad():
             for batch in test_loader:
@@ -219,84 +256,74 @@ def entrenar_distilbert(
 
                 outputs = model(input_ids=input_ids, attention_mask=attention_mask)
                 preds = torch.argmax(outputs.logits, dim=1)
+                probs = torch.softmax(outputs.logits, dim=1)
 
-                val_preds.extend(preds.cpu().numpy())
-                val_labels.extend(labels.cpu().numpy())
+                all_preds.extend(preds.cpu().numpy())
+                all_labels.extend(labels.cpu().numpy())
+                all_probs.extend(probs.cpu().numpy())
 
-        # Calcular métricas
-        val_f1 = f1_score(val_labels, val_preds, average="macro")
-        print(".4f")
+        # Métricas finales
+        f1_macro = f1_score(all_labels, all_preds, average="macro")
+        f1_weighted = f1_score(all_labels, all_preds, average="weighted")
+        f1_pls = f1_score(all_labels, all_preds, pos_label=1)
+        f1_non_pls = f1_score(all_labels, all_preds, pos_label=0)
 
-        # Guardar mejor modelo
-        if val_f1 > best_f1:
-            best_f1 = val_f1
-            best_model_state = model.state_dict().copy()
+        print(f"F1-Score macro: {f1_macro:.4f}")
+        print(f"F1-Score weighted: {f1_weighted:.4f}")
+        print(f"F1-Score PLS: {f1_pls:.4f}")
+        print(f"F1-Score non-PLS: {f1_non_pls:.4f}")
 
-    # Cargar mejor modelo
-    model.load_state_dict(best_model_state)
+        # Loggear métricas finales
+        mlflow.log_metrics({
+            "final_f1_macro": f1_macro,
+            "final_f1_weighted": f1_weighted,
+            "final_f1_pls": f1_pls,
+            "final_f1_non_pls": f1_non_pls,
+            "best_val_f1": best_f1
+        })
 
-    # Evaluación final
-    print("\si=== EVALUACIÓN FINAL ===")
-    model.eval()
-    all_preds = []
-    all_labels = []
-    all_probs = []
-
-    with torch.no_grad():
-        for batch in test_loader:
-            input_ids = batch["input_ids"].to(device)
-            attention_mask = batch["attention_mask"].to(device)
-            labels = batch["labels"].to(device)
-
-            outputs = model(input_ids=input_ids, attention_mask=attention_mask)
-            preds = torch.argmax(outputs.logits, dim=1)
-            probs = torch.softmax(outputs.logits, dim=1)
-
-            all_preds.extend(preds.cpu().numpy())
-            all_labels.extend(labels.cpu().numpy())
-            all_probs.extend(probs.cpu().numpy())
-
-    # Métricas finales
-    f1_macro = f1_score(all_labels, all_preds, average="macro")
-    f1_weighted = f1_score(all_labels, all_preds, average="weighted")
-
-    print(".4f")
-    print(".4f")
-
-    # Reporte de clasificación
-    print("\nReporte de clasificación:")
-    print(
-        classification_report(
+        # Reporte de clasificación
+        print("\nReporte de clasificación:")
+        report = classification_report(
             all_labels, all_preds, target_names=["non-por favor", "por favor"]
         )
-    )
+        print(report)
 
-    # Matriz de confusión
-    cm = confusion_matrix(all_labels, all_preds)
-    print("\nMatriz de confusión:")
-    print(cm)
+        # Matriz de confusión
+        cm = confusion_matrix(all_labels, all_preds)
+        print("\nMatriz de confusión:")
+        print(cm)
 
-    return {
-        "model": model,
-        "tokenizer": tokenizer,
-        "device": device,
-        "f1_macro": f1_macro,
-        "f1_weighted": f1_weighted,
-        "classification_report": classification_report(
-            all_labels,
-            all_preds,
-            target_names=["non-por favor", "por favor"],
-            output_dict=True,
-        ),
-        "confusion_matrix": cm.tolist(),
-        "predictions": all_preds,
-        "probabilities": all_probs,
-        "best_f1": best_f1,
-    }
+        # Loggear matriz de confusión
+        mlflow.log_text(str(cm), "confusion_matrix.txt")
+
+        # Guardar modelo en MLflow
+        mlflow.pytorch.log_model(model, "model")
+        mlflow.log_text(str(tokenizer), "tokenizer_info.txt")
+
+        return {
+            "model": model,
+            "tokenizer": tokenizer,
+            "device": device,
+            "f1_macro": f1_macro,
+            "f1_weighted": f1_weighted,
+            "f1_pls": f1_pls,
+            "f1_non_pls": f1_non_pls,
+            "classification_report": classification_report(
+                all_labels,
+                all_preds,
+                target_names=["non-por favor", "por favor"],
+                output_dict=True,
+            ),
+            "confusion_matrix": cm.tolist(),
+            "predictions": all_preds,
+            "probabilities": all_probs,
+            "best_f1": best_f1,
+        }
 
 
 def guardar_modelo_distilbert(resultados: Dict[str, Any], ruta_modelo: str) -> None:
-    """Guarda el modelo DistilBERT entrenado Args: resultados: Diccionario con modelo si métricas ruta_modelo: Directorio donde guardar el modelo"""
+    """Guarda el modelo DistilBERT entrenado"""
     os.makedirs(ruta_modelo, exist_ok=True)
 
     # Guardar modelo y tokenizer
@@ -307,12 +334,14 @@ def guardar_modelo_distilbert(resultados: Dict[str, Any], ruta_modelo: str) -> N
     metricas = {
         "f1_macro": resultados["f1_macro"],
         "f1_weighted": resultados["f1_weighted"],
+        "f1_pls": resultados["f1_pls"],
+        "f1_non_pls": resultados["f1_non_pls"],
         "best_f1": resultados["best_f1"],
         "classification_report": resultados["classification_report"],
         "confusion_matrix": resultados["confusion_matrix"],
     }
 
-    with open(f"{ruta_modelo}/metricas_distilbert.json", "con") as f:
+    with open(f"{ruta_modelo}/metricas_distilbert.json", "w") as f:
         json.dump(metricas, f, indent=2)
 
     print(f"Modelo DistilBERT guardado en: {ruta_modelo}")
@@ -328,7 +357,7 @@ def main():
     RANDOM_STATE = 42
 
     # Configuración de entrenamiento (reducida para pruebas rápidas)
-    SAMPLE_SIZE = 10000  # Usar muestra para entrenamiento rápido
+    SAMPLE_SIZE = 1000  # Reducir para pruebas más rápidas
     BATCH_SIZE = 8  # Reducir batch size para memoria
     EPOCHS = 2  # Pocas épocas para pruebas
     MAX_LENGTH = 256  # Longitud máxima de secuencia
@@ -345,13 +374,23 @@ def main():
         print(f"Clases encontradas: {unique_labels}")
 
         if len(unique_labels) < 2:
-            print("Error: Se necesita al menos a|tambien clases para clasificación")
+            print("Error: Se necesita al menos dos clases para clasificación")
             return None
 
+        # Convertir a listas para evitar problemas de indexación
+        X_list = X.tolist()
+        y_list = y.tolist()
+        
         # Dividir en train/test
         X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y
+            X_list, y_list, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y_list
         )
+        
+        # Convertir de vuelta a Series
+        X_train = pd.Series(X_train, name='textos')
+        X_test = pd.Series(X_test, name='textos')
+        y_train = pd.Series(y_train, name='labels')
+        y_test = pd.Series(y_test, name='labels')
 
         print(f"Conjunto de entrenamiento: {len(X_train)} registros")
         print(f"Conjunto de prueba: {len(X_test)} registros")
@@ -377,10 +416,10 @@ def main():
     except Exception as e:
         print(f"Error durante el entrenamiento: {str(e)}")
         import traceback
-
         traceback.print_exc()
         raise
 
 
 if __name__ == "__main__":
     main()
+

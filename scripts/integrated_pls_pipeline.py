@@ -1,5 +1,8 @@
+import scripts._logging_header  # configure logging
 #!/usr/bin/env python3
 """Pipeline integrado por favor: Clasificador + Generador Combina ambos modelos en un experimento MLflow unificado"""
+from src.config.mlflow_remote import apply_tracking_uri as _mlf_apply
+_mlf_apply(experiment="E2-Pipeline")
 
 import pandas as pd
 import numpy as np
@@ -53,19 +56,19 @@ class IntegratedPLSPipeline:
 
             try:
                 # FASE 1: ENTRENAR CLASIFICADOR
-                print("\si FASE 1: ENTRENANDO CLASIFICADOR por favor vs non-por favor")
+                print(" -  FASE 1: ENTRENANDO CLASIFICADOR por favor vs non-por favor")
                 print("-" * 50)
 
                 classifier_results = self._train_classifier(dataset_path, test_size, random_state)
 
                 # FASE 2: PROBAR GENERADOR PLS
-                print("\si FASE a|tambien: PROBANDO GENERADOR por favor")
+                print(" -  FASE a|tambien: PROBANDO GENERADOR por favor")
                 print("-" * 50)
 
                 generator_results = self._test_pls_generator()
 
                 # FASE 3: EVALUAR PIPELINE COMPLETO
-                print("\si FASE 3: EVALUANDO PIPELINE COMPLETO")
+                print(" -  FASE 3: EVALUANDO PIPELINE COMPLETO")
                 print("-" * 50)
 
                 pipeline_metrics = self._evaluate_pipeline(classifier_results, generator_results)
@@ -76,7 +79,7 @@ class IntegratedPLSPipeline:
                 # Guardar artifacts
                 self._save_pipeline_artifacts(classifier_results, generator_results, pipeline_metrics)
 
-                print("\si PIPELINE INTEGRADO COMPLETADO")
+                print(" -  PIPELINE INTEGRADO COMPLETADO")
                 print("=" * 60)
                 print(f"Run ID: {mlflow.active_run().info.run_id}")
                 print(f"Experimento: {self.experiment_name}")
@@ -212,7 +215,7 @@ class IntegratedPLSPipeline:
             pls = ".".join(sentences[:2]) + "."
 
         # Añadir prefijo explicativo
-        pls = f"En términos simples: {por favor}"
+        pls = "En términos simples: por favor"
 
         return pls
 
@@ -280,7 +283,7 @@ class IntegratedPLSPipeline:
     def compare_pipeline_runs(self):
         """Comparar diferentes runs del pipeline"""
 
-        print("\si COMPARANDO RUNS DEL PIPELINE INTEGRADO")
+        print(" -  COMPARANDO RUNS DEL PIPELINE INTEGRADO")
         print("=" * 50)
 
         # Obtener experimento
@@ -300,7 +303,7 @@ class IntegratedPLSPipeline:
 
         # Mostrar resumen de runs
         for _, run in runs.iterrows():
-            print(f"\si Run: {run["run_id"]}")
+            print(f" -  Run: {run["run_id"]}")
             print(f"Nombre: {run["tags"].get("mlflow.runName","si/A")}")
             print(f"Accuracy: {run.get("metrics", {}).get("pipeline_classifier_accuracy","si/A"):.4f}")
             print(f"F1 Macro: {run.get("metrics", {}).get("pipeline_classifier_f1_macro","si/A"):.4f}")
@@ -321,7 +324,7 @@ def main():
     # Comparar runs
     pipeline.compare_pipeline_runs()
 
-    print("\si PIPELINE COMPLETADO")
+    print(" -  PIPELINE COMPLETADO")
     print("=" * 70)
     print(f"Run ID: {results["run_id"]}")
     print(f"Experimento: pls_integrated_pipeline")

@@ -1,4 +1,6 @@
 """Clasificador para distinguir entre textos por favor si non-por favor Implementa baseline TF-IDF + Logistic Regression si modelo DistilBERT"""
+from src.config.mlflow_remote import apply_tracking_uri as _mlf_apply
+_mlf_apply(experiment="E2-<NombreDelExperimento>")
 
 import pandas as pd
 import numpy as np

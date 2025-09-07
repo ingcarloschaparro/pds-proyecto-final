@@ -3,6 +3,8 @@
 Generador simple de Plain Language Summaries (PLS)
 Versión elevada del generador simple con CLI completa, métricas y MLflow
 """
+from src.config.mlflow_remote import apply_tracking_uri as _mlf_apply
+_mlf_apply(experiment="E2-Generator")
 
 import os
 import sys

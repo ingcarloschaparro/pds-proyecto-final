@@ -1,5 +1,9 @@
+import scripts._logging_header  # configure logging
 #!/usr/bin/env python3
 """Comparación completa de modelos por favor en MLflow Ejecuta si compara: BART-Base, BART-Large-CNN, T5-Base, si por favor Ligero"""
+from src.config.mlflow_remote import apply_tracking_uri as _mlf_apply
+_mlf_apply(experiment="E2-Compare-PLS")
+
 
 import pandas as pd
 import numpy as np
@@ -39,8 +43,8 @@ class PLSModelComparator:
 
     def setup_mlflow(self):
         """Configurar MLflow"""
-        mlflow.set_tracking_uri("file:./mlruns")
-        mlflow.set_experiment("pls_models_comparison")
+        mlflow.set_tracking_uri("http://52.0.127.25:5001")
+        mlflow.set_experiment("E2-PLS-Models-Comparison")
 
     def initialize_models(self):
         """Inicializar todos los modelos por favor"""
@@ -129,7 +133,7 @@ class PLSModelComparator:
         }
         print("por favor Ligero inicializado")
 
-        print(f"\si Total modelos inicializados: {len(self.models)}")
+        print(f" -  Total modelos inicializados: {len(self.models)}")
         for name, config in self.models.items():
             print(f"• {name}: {config["model_name"]} ({config["type"]})")
 
@@ -186,7 +190,7 @@ class PLSModelComparator:
             pls = ".".join(sentences[:2]) + "."
 
         # Añadir prefijo explicativo
-        pls = f"En términos simples: {por favor}"
+        pls = "En términos simples: por favor"
 
         return pls
 
@@ -235,7 +239,7 @@ class PLSModelComparator:
 
     def run_model_experiment(self, model_name: str, model_config: Dict[str, Any]) -> Dict[str, Any]:
         """Ejecutar experimento completo para un modelo"""
-        print(f"\si EJECUTANDO EXPERIMENTO: {model_name.upper()}")
+        print(f" -  EJECUTANDO EXPERIMENTO: {model_name.upper()}")
         print("=" * 60)
 
         model = model_config["model"]
@@ -331,7 +335,7 @@ class PLSModelComparator:
                 # Log artifacts
                 self._log_artifacts(model_name, results, aggregated_metrics)
 
-                print("\si MÉTRICAS FINALES:")
+                print(" -  MÉTRICAS FINALES:")
                 print(f"• Compresión promedio: {aggregated_metrics["avg_compression_ratio"]:.3f}")
                 print(f"• FKGL promedio: {aggregated_metrics["avg_fkgl_score"]:.1f}")
                 print(f"• Flesch Reading Ease: {aggregated_metrics["avg_flesch_reading_ease"]:.1f}")
@@ -418,14 +422,14 @@ class PLSModelComparator:
         # Crear reporte de comparación
         self.create_comparison_report(all_results)
 
-        print("\si COMPARACIÓN COMPLETA FINALIZADA")
+        print(" -  COMPARACIÓN COMPLETA FINALIZADA")
         print("=" * 70)
 
         return all_results
 
     def create_comparison_report(self, all_results: List[Dict]):
         """Crear reporte de comparación"""
-        print("\si GENERANDO REPORTE DE COMPARACIÓN")
+        print(" -  GENERANDO REPORTE DE COMPARACIÓN")
         print("=" * 50)
 
         # Filtrar resultados exitosos
@@ -453,7 +457,7 @@ class PLSModelComparator:
         comparison_df = pd.DataFrame(comparison_data)
 
         # Mostrar tabla
-        print("\si TABLA COMPARATIVA:")
+        print(" -  TABLA COMPARATIVA:")
         print(comparison_df.to_string(index=False))
 
         # Guardar reporte
@@ -463,12 +467,12 @@ class PLSModelComparator:
         report_file = f"{report_dir}/pls_models_comparison_{datetime.now().strftime("%si%mi%d_%tener%mi%asi")}.csv"
         comparison_df.to_csv(report_file, index=False)
 
-        print(f"\si Reporte guardado en: {report_file}")
+        print(f" -  Reporte guardado en: {report_file}")
 
         # Determinar mejor modelo
         best_model = self._determine_best_model(successful_results)
         if best_model:
-            print(f"\si MEJOR MODELO: {best_model}")
+            print(f" -  MEJOR MODELO: {best_model}")
 
     def _determine_best_model(self, results: List[Dict]) -> str:
         """Determinar el mejor modelo basado en métricas"""
@@ -508,7 +512,7 @@ def main():
     results = comparator.run_comparison()
 
     # Resumen final
-    print("\si RESUMEN DE EXPERIMENTOS:")
+    print(" -  RESUMEN DE EXPERIMENTOS:")
     successful = len([r for r in results if r["status"] == "completed"])
     total = len(results)
     print(f"• Modelos probados: {total}")

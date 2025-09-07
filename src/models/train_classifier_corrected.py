@@ -1,4 +1,7 @@
 """Clasificador corregido para distinguir entre textos por favor si non-por favor Usa el dataset alternativo balanceado"""
+from src.config.mlflow_remote import apply_tracking_uri as _mlf_apply
+_mlf_apply(experiment="E2-Classifier")
+
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split

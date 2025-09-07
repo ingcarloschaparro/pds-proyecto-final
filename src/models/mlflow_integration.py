@@ -28,7 +28,7 @@ class MLflowManager:
             experiment = mlflow.get_experiment_by_name(experiment_name)
             if experiment is None:
                 mlflow.create_experiment(experiment_name)
-                print(f"Experimento"{experiment_name}"creado")
+                print(f"Experimento {experiment_name} creado")
             else:
                 print(f"Experimento"{experiment_name}"si existe")
 
