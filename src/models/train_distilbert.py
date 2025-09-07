@@ -1,6 +1,5 @@
-"""
-Clasificador DistilBERT para distinguir entre textos PLS y non-PLS
-"""
+"""Clasificador DistilBERT para distinguir entre textos por favor si non-por favor"""
+
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -11,14 +10,16 @@ from transformers import (
     DistilBertTokenizer,
     DistilBertForSequenceClassification,
     AdamW,
-    get_linear_schedule_with_warmup
+    get_linear_schedule_with_warmup,
 )
 import os
 from pathlib import Path
 import json
 from typing import Dict, Any, Tuple
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
+
 
 class TextClassificationDataset(Dataset):
     """Dataset personalizado para clasificación de textos"""
@@ -40,35 +41,29 @@ class TextClassificationDataset(Dataset):
         encoding = self.tokenizer(
             text,
             truncation=True,
-            padding='max_length',
+            padding="max_length",
             max_length=self.max_length,
-            return_tensors='pt'
+            return_tensors="pt",
         )
 
         return {
-            'input_ids': encoding['input_ids'].flatten(),
-            'attention_mask': encoding['attention_mask'].flatten(),
-            'labels': torch.tensor(label, dtype=torch.long)
+            "input_ids": encoding["input_ids"].flatten(),
+            "attention_mask": encoding["attention_mask"].flatten(),
+            "labels": torch.tensor(label, dtype=torch.long),
         }
 
-def preparar_datos_distilbert(ruta_datos: str, sample_size: int = None) -> Tuple[pd.Series, pd.Series]:
-    """
-    Prepara datos para DistilBERT
 
-    Args:
-        ruta_datos: Ruta al archivo CSV con datos procesados
-        sample_size: Tamaño de muestra para entrenamiento rápido (opcional)
-
-    Returns:
-        Tuple con features (X) y labels (y)
-    """
+def preparar_datos_distilbert(
+    ruta_datos: str, sample_size: int = None
+) -> Tuple[pd.Series, pd.Series]:
+    """Prepara datos para DistilBERT Args: ruta_datos: Ruta al archivo CSV con datos procesados sample_size: Tamaño de muestra para entrenamiento rápido (opcional) Returns: Tuple con features (ex) si labels (si)"""
     print("Cargando datos para DistilBERT...")
 
     # Cargar datos
     df = pd.read_csv(ruta_datos, low_memory=False)
 
     # Filtrar solo registros con labels válidos
-    df_valid = df[df['label'].notna()].copy()
+    df_valid = df[df["label"].notna()].copy()
     print(f"Registros con labels válidos: {len(df_valid)} de {len(df)}")
 
     # Preparar features
@@ -76,13 +71,13 @@ def preparar_datos_distilbert(ruta_datos: str, sample_size: int = None) -> Tuple
     labels = []
 
     print(f"Procesando {len(df_valid)} registros válidos...")
-    print("Distribución de labels:", df_valid['label'].value_counts().to_dict())
+    print("Distribución de labels:", df_valid["label"].value_counts().to_dict())
 
     # Procesar datos PLS y non-PLS
     for _, row in df_valid.iterrows():
         # Para PLS: usar el resumen como feature
-        if row['label'] == 'pls':
-            resumen = row['resumen']
+        if row["label"] == "por favor":
+            resumen = row["resumen"]
             if pd.isna(resumen):
                 texto = ""
             else:
@@ -93,8 +88,8 @@ def preparar_datos_distilbert(ruta_datos: str, sample_size: int = None) -> Tuple
                 labels.append(1)  # PLS
 
         # Para non-PLS: usar el texto original
-        elif row['label'] == 'non_pls':
-            texto_original = row['texto_original']
+        elif row["label"] == "non_pls":
+            texto_original = row["texto_original"]
             if pd.isna(texto_original):
                 texto = ""
             else:
@@ -116,44 +111,32 @@ def preparar_datos_distilbert(ruta_datos: str, sample_size: int = None) -> Tuple
 
     return pd.Series(textos), pd.Series(labels)
 
-def entrenar_distilbert(X_train: pd.Series, y_train: pd.Series,
-                       X_test: pd.Series, y_test: pd.Series,
-                       model_name: str = 'distilbert-base-uncased',
-                       batch_size: int = 16,
-                       epochs: int = 3,
-                       learning_rate: float = 2e-5,
-                       max_length: int = 256) -> Dict[str, Any]:
-    """
-    Entrena modelo DistilBERT para clasificación
 
-    Args:
-        X_train, y_train: Datos de entrenamiento
-        X_test, y_test: Datos de validación
-        model_name: Nombre del modelo pre-entrenado
-        batch_size: Tamaño del batch
-        epochs: Número de épocas
-        learning_rate: Tasa de aprendizaje
-        max_length: Longitud máxima de secuencia
-
-    Returns:
-        Diccionario con modelo, métricas y tokenizer
-    """
+def entrenar_distilbert(
+    X_train: pd.Series,
+    y_train: pd.Series,
+    X_test: pd.Series,
+    y_test: pd.Series,
+    model_name: str = "distilbert-base-uncased",
+    batch_size: int = 16,
+    epochs: int = 3,
+    learning_rate: float = 2e-5,
+    max_length: int = 256,
+) -> Dict[str, Any]:
+    """Entrena modelo DistilBERT para clasificación Args: X_train, y_train: Datos de entrenamiento X_test, y_test: Datos de validación model_name: Nombre del modelo pre-entrenado batch_size: Tamaño del batch epochs: Número de épocas learning_rate: Tasa de aprendizaje max_length: Longitud máxima de secuencia Returns: Diccionario con modelo, métricas si tokenizer"""
 
     print("=== ENTRENAMIENTO DISTILBERT ===")
     print(f"Modelo: {model_name}")
     print(f"Batch size: {batch_size}, Epochs: {epochs}, LR: {learning_rate}")
 
     # Verificar si hay GPU disponible
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Dispositivo: {device}")
 
     # Cargar tokenizer y modelo
     tokenizer = DistilBertTokenizer.from_pretrained(model_name)
     model = DistilBertForSequenceClassification.from_pretrained(
-        model_name,
-        num_labels=2,
-        output_attentions=False,
-        output_hidden_states=False
+        model_name, num_labels=2, output_attentions=False, output_hidden_states=False
     )
     model.to(device)
 
@@ -169,9 +152,7 @@ def entrenar_distilbert(X_train: pd.Series, y_train: pd.Series,
     optimizer = AdamW(model.parameters(), lr=learning_rate, eps=1e-8)
     total_steps = len(train_loader) * epochs
     scheduler = get_linear_schedule_with_warmup(
-        optimizer,
-        num_warmup_steps=0,
-        num_training_steps=total_steps
+        optimizer, num_warmup_steps=0, num_training_steps=total_steps
     )
 
     # Entrenamiento
@@ -187,14 +168,12 @@ def entrenar_distilbert(X_train: pd.Series, y_train: pd.Series,
         for batch in train_loader:
             optimizer.zero_grad()
 
-            input_ids = batch['input_ids'].to(device)
-            attention_mask = batch['attention_mask'].to(device)
-            labels = batch['labels'].to(device)
+            input_ids = batch["input_ids"].to(device)
+            attention_mask = batch["attention_mask"].to(device)
+            labels = batch["labels"].to(device)
 
             outputs = model(
-                input_ids=input_ids,
-                attention_mask=attention_mask,
-                labels=labels
+                input_ids=input_ids, attention_mask=attention_mask, labels=labels
             )
 
             loss = outputs.loss
@@ -215,9 +194,9 @@ def entrenar_distilbert(X_train: pd.Series, y_train: pd.Series,
 
         with torch.no_grad():
             for batch in test_loader:
-                input_ids = batch['input_ids'].to(device)
-                attention_mask = batch['attention_mask'].to(device)
-                labels = batch['labels'].to(device)
+                input_ids = batch["input_ids"].to(device)
+                attention_mask = batch["attention_mask"].to(device)
+                labels = batch["labels"].to(device)
 
                 outputs = model(input_ids=input_ids, attention_mask=attention_mask)
                 preds = torch.argmax(outputs.logits, dim=1)
@@ -226,7 +205,7 @@ def entrenar_distilbert(X_train: pd.Series, y_train: pd.Series,
                 val_labels.extend(labels.cpu().numpy())
 
         # Calcular métricas
-        val_f1 = f1_score(val_labels, val_preds, average='macro')
+        val_f1 = f1_score(val_labels, val_preds, average="macro")
         print(".4f")
 
         # Guardar mejor modelo
@@ -238,7 +217,7 @@ def entrenar_distilbert(X_train: pd.Series, y_train: pd.Series,
     model.load_state_dict(best_model_state)
 
     # Evaluación final
-    print("\n=== EVALUACIÓN FINAL ===")
+    print("\si=== EVALUACIÓN FINAL ===")
     model.eval()
     all_preds = []
     all_labels = []
@@ -246,9 +225,9 @@ def entrenar_distilbert(X_train: pd.Series, y_train: pd.Series,
 
     with torch.no_grad():
         for batch in test_loader:
-            input_ids = batch['input_ids'].to(device)
-            attention_mask = batch['attention_mask'].to(device)
-            labels = batch['labels'].to(device)
+            input_ids = batch["input_ids"].to(device)
+            attention_mask = batch["attention_mask"].to(device)
+            labels = batch["labels"].to(device)
 
             outputs = model(input_ids=input_ids, attention_mask=attention_mask)
             preds = torch.argmax(outputs.logits, dim=1)
@@ -259,15 +238,19 @@ def entrenar_distilbert(X_train: pd.Series, y_train: pd.Series,
             all_probs.extend(probs.cpu().numpy())
 
     # Métricas finales
-    f1_macro = f1_score(all_labels, all_preds, average='macro')
-    f1_weighted = f1_score(all_labels, all_preds, average='weighted')
+    f1_macro = f1_score(all_labels, all_preds, average="macro")
+    f1_weighted = f1_score(all_labels, all_preds, average="weighted")
 
     print(".4f")
     print(".4f")
 
     # Reporte de clasificación
     print("\nReporte de clasificación:")
-    print(classification_report(all_labels, all_preds, target_names=['non-PLS', 'PLS']))
+    print(
+        classification_report(
+            all_labels, all_preds, target_names=["non-por favor", "por favor"]
+        )
+    )
 
     # Matriz de confusión
     cm = confusion_matrix(all_labels, all_preds)
@@ -275,47 +258,46 @@ def entrenar_distilbert(X_train: pd.Series, y_train: pd.Series,
     print(cm)
 
     return {
-        'model': model,
-        'tokenizer': tokenizer,
-        'device': device,
-        'f1_macro': f1_macro,
-        'f1_weighted': f1_weighted,
-        'classification_report': classification_report(all_labels, all_preds,
-                                                     target_names=['non-PLS', 'PLS'],
-                                                     output_dict=True),
-        'confusion_matrix': cm.tolist(),
-        'predictions': all_preds,
-        'probabilities': all_probs,
-        'best_f1': best_f1
+        "model": model,
+        "tokenizer": tokenizer,
+        "device": device,
+        "f1_macro": f1_macro,
+        "f1_weighted": f1_weighted,
+        "classification_report": classification_report(
+            all_labels,
+            all_preds,
+            target_names=["non-por favor", "por favor"],
+            output_dict=True,
+        ),
+        "confusion_matrix": cm.tolist(),
+        "predictions": all_preds,
+        "probabilities": all_probs,
+        "best_f1": best_f1,
     }
 
-def guardar_modelo_distilbert(resultados: Dict[str, Any], ruta_modelo: str) -> None:
-    """
-    Guarda el modelo DistilBERT entrenado
 
-    Args:
-        resultados: Diccionario con modelo y métricas
-        ruta_modelo: Directorio donde guardar el modelo
-    """
+def guardar_modelo_distilbert(resultados: Dict[str, Any], ruta_modelo: str) -> None:
+    """Guarda el modelo DistilBERT entrenado Args: resultados: Diccionario con modelo si métricas ruta_modelo: Directorio donde guardar el modelo"""
     os.makedirs(ruta_modelo, exist_ok=True)
 
     # Guardar modelo y tokenizer
-    resultados['model'].save_pretrained(ruta_modelo)
-    resultados['tokenizer'].save_pretrained(ruta_modelo)
+    resultados["model"].save_pretrained(ruta_modelo)
+    resultados["tokenizer"].save_pretrained(ruta_modelo)
 
     # Guardar métricas
     metricas = {
-        'f1_macro': resultados['f1_macro'],
-        'f1_weighted': resultados['f1_weighted'],
-        'best_f1': resultados['best_f1'],
-        'classification_report': resultados['classification_report'],
-        'confusion_matrix': resultados['confusion_matrix']
+        "f1_macro": resultados["f1_macro"],
+        "f1_weighted": resultados["f1_weighted"],
+        "best_f1": resultados["best_f1"],
+        "classification_report": resultados["classification_report"],
+        "confusion_matrix": resultados["confusion_matrix"],
     }
 
-    with open(f"{ruta_modelo}/metricas_distilbert.json", 'w') as f:
+    with open(f"{ruta_modelo}/metricas_distilbert.json", "con") as f:
         json.dump(metricas, f, indent=2)
 
     print(f"Modelo DistilBERT guardado en: {ruta_modelo}")
+
 
 def main():
     """Función principal para entrenar DistilBERT"""
@@ -328,9 +310,9 @@ def main():
 
     # Configuración de entrenamiento (reducida para pruebas rápidas)
     SAMPLE_SIZE = 10000  # Usar muestra para entrenamiento rápido
-    BATCH_SIZE = 8       # Reducir batch size para memoria
-    EPOCHS = 2           # Pocas épocas para pruebas
-    MAX_LENGTH = 256     # Longitud máxima de secuencia
+    BATCH_SIZE = 8  # Reducir batch size para memoria
+    EPOCHS = 2  # Pocas épocas para pruebas
+    MAX_LENGTH = 256  # Longitud máxima de secuencia
 
     print("=== ENTRENAMIENTO CLASIFICADOR DISTILBERT ===")
     print(f"Usando muestra de {SAMPLE_SIZE} registros para entrenamiento rápido...")
@@ -344,7 +326,7 @@ def main():
         print(f"Clases encontradas: {unique_labels}")
 
         if len(unique_labels) < 2:
-            print("Error: Se necesita al menos 2 clases para clasificación")
+            print("Error: Se necesita al menos a|tambien clases para clasificación")
             return None
 
         # Dividir en train/test
@@ -357,10 +339,13 @@ def main():
 
         # Entrenar modelo
         resultados = entrenar_distilbert(
-            X_train, y_train, X_test, y_test,
+            X_train,
+            y_train,
+            X_test,
+            y_test,
             batch_size=BATCH_SIZE,
             epochs=EPOCHS,
-            max_length=MAX_LENGTH
+            max_length=MAX_LENGTH,
         )
 
         # Guardar modelo
@@ -373,8 +358,10 @@ def main():
     except Exception as e:
         print(f"Error durante el entrenamiento: {str(e)}")
         import traceback
+
         traceback.print_exc()
         raise
+
 
 if __name__ == "__main__":
     main()

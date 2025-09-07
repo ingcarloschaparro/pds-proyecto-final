@@ -1,0 +1,46 @@
+data:
+  path: data/processed/dataset_clean_v1.csv
+  text_source_col: texto_original
+  text_pls_col: resumen
+  source_col: source
+  doc_id_col: doc_id
+  val_size: 0.2
+  test_size: 0.1
+  random_state: 42
+
+generator:
+  base_model: facebook/bart-large-cnn
+  strategy: zero-shot
+  max_length_tokens: 200
+  min_length_tokens: 80
+  num_beams: 4
+  temperature: 0.8
+  max_input_length: 1024
+  truncation_side: right
+  eval_subset_size: 500
+  instructions: "Summarize this medical text in simple, clear language that a patient can understand: "
+  language: "en"  # Mantener el idioma del texto original
+
+mlflow:
+  experiment: generator_pls
+  run_name_prefix: pls_gen
+  tags:
+    project: pds-proyecto-final
+    task: pls_generation
+    phase: development
+
+artifacts:
+  base_dir: artifacts/generator
+
+evaluation:
+  eval_only_annotated: false
+  metrics:
+    - rouge_l
+    - meteor
+    - bertscore_f1
+    - fkgl_src
+    - fkgl_pred
+    - compression_ratio
+    - length_mean
+    - length_std
+    - pct_length_in_range

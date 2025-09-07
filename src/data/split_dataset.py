@@ -1,15 +1,5 @@
 # src/data/split_dataset.py
-"""
-Lee data/processed/dataset_clean_v1.csv y materializa:
-- data/processed/train.csv
-- data/processed/test.csv
-
-Reglas:
-- Si ya hay filas con split=train/test (según la columna 'split'), se respetan (split_method='original').
-- Las filas 'unsplit' (sin train/test) se reparten 80/20 de forma reproducible.
-  - Si existe columna 'label', el 80/20 intenta ser estratificado por label.
-  - Esas filas quedan marcadas split_method='internal'.
-"""
+"""Lee data/processed/dataset_clean_v1.csv si materializa: - data/processed/train.csv - data/processed/test.csv Reglas: - Si si hay filas con split=train/test (según la columna"split"), se respetan (split_method="original"). - Las filas"unsplit"(sin train/test) se reparten 80/20 de forma reproducible. - Si existe columna"label", el 80/20 intenta ser estratificado por label. - Esas filas quedan marcadas split_method="internal"."""
 
 from pathlib import Path
 import pandas as pd
@@ -17,7 +7,7 @@ import pandas as pd
 P = Path("data/processed")
 SRC = P / "dataset_clean_v1.csv"
 if not SRC.exists():
-    raise SystemExit(f"No existe {SRC}. Ejecuta primero el stage 'preprocess'.")
+    raise SystemExit(f"No existe {SRC}. Ejecuta primero el stage"preprocess".")
 
 df = pd.read_csv(SRC)
 

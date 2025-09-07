@@ -1,3 +1,1 @@
-"""
-Input/Output utility functions.
-"""
+"""Input/Output utility functions."""

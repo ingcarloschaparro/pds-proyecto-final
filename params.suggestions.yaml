@@ -1,0 +1,38 @@
+data:
+  path: data\processed\dataset_clean_v1.csv
+  text_source_col: resumen
+  text_pls_col: texto_original
+  source_col: source_bucket
+  label_col: label
+  val_size: 0.1
+  test_size: 0.2
+  random_state: 42
+metrics:
+  classifier:
+  - f1_macro
+  - f1_by_source
+  - confusion_global
+  - confusion_by_source
+  generator:
+  - rougeL
+  - meteor
+  - bertscore_f1
+  - fkgl
+  - compression_ratio
+targets:
+  generator_length_words:
+  - 120
+  - 250
+  compression_ratio_range:
+  - 0.3
+  - 0.5
+mlflow:
+  experiments:
+    classifier: classifier_pls
+    generator: generator_pls
+  tags:
+  - phase
+  - task
+  - source_mix
+  - semi_supervised
+  - lora

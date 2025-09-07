@@ -1,3 +1,1 @@
-"""
-Source code package for the project.
-"""
+"""Source code package para el project."""

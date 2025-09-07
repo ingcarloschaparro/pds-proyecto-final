@@ -1,7 +1,4 @@
-"""
-INTEGRACIÓN MLFLOW PARA EXPERIMENTOS PLS
-Fase 2: Experimentos y Versionado con MLflow
-"""
+"""INTEGRACIÓN MLFLOW PARA EXPERIMENTOS por favor Fase a|tambien: Experimentos si Versionado con MLflow"""
 import mlflow
 import mlflow.sklearn
 from mlflow.tracking import MlflowClient
@@ -16,18 +13,13 @@ from pathlib import Path
 import joblib
 from sklearn.metrics import classification_report, confusion_matrix, f1_score
 import warnings
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
 class MLflowManager:
-    """Gestor de experimentos con MLflow para proyecto PLS"""
+    """Gestor de experimentos con MLflow para proyecto por favor"""
 
     def __init__(self, experiment_name: str = "pls_classification_experiments"):
-        """
-        Inicializar gestor de MLflow
-
-        Args:
-            experiment_name: Nombre del experimento en MLflow
-        """
+        """Inicializar gestor de MLflow Args: experiment_name: Nombre del experimento en MLflow"""
         self.experiment_name = experiment_name
         self.client = MlflowClient()
 
@@ -36,15 +28,15 @@ class MLflowManager:
             experiment = mlflow.get_experiment_by_name(experiment_name)
             if experiment is None:
                 mlflow.create_experiment(experiment_name)
-                print(f"✅ Experimento '{experiment_name}' creado")
+                print(f"Experimento"{experiment_name}"creado")
             else:
-                print(f"✅ Experimento '{experiment_name}' ya existe")
+                print(f"Experimento"{experiment_name}"si existe")
 
             mlflow.set_experiment(experiment_name)
-            print(f"🎯 Experimento activo: {experiment_name}")
+            print(f"Experimento activo: {experiment_name}")
 
         except Exception as e:
-            print(f"❌ Error configurando experimento: {e}")
+            print(f"Error configurando experimento: {e}")
 
     def log_clasificador_tfidf(self,
                                modelo,
@@ -56,17 +48,8 @@ class MLflowManager:
                                X_train_vec=None,
                                X_test_vec=None,
                                parametros: dict = None):
-        """
-        Registrar experimento completo del clasificador TF-IDF
-
-        Args:
-            modelo: Modelo entrenado
-            vectorizer: Vectorizer TF-IDF
-            X_train, X_test: Datos de train/test
-            y_train, y_test: Labels de train/test
-            parametros: Parámetros del modelo
-        """
-        with mlflow.start_run(run_name=f"tfidf_{datetime.now().strftime('%Y%m%d_%H%M%S')}"):
+        """Registrar experimento completo del clasificador TF-IDF Args: modelo: Modelo entrenado vectorizer: Vectorizer TF-IDF X_train, X_test: Datos de train/test y_train, y_test: Labels de train/test parametros: Parámetros del modelo"""
+        with mlflow.start_run(run_name=f"tfidf_{datetime.now().strftime("%si%mi%d_%tener%mi%asi")}"):
 
             # Log de parámetros
             if parametros:
@@ -75,9 +58,9 @@ class MLflowManager:
 
             # Parámetros del modelo TF-IDF
             mlflow.log_param("model_type", "tfidf_logistic_regression")
-            mlflow.log_param("vectorizer_max_features", getattr(vectorizer, 'max_features', 'default'))
-            mlflow.log_param("vectorizer_ngram_range", getattr(vectorizer, 'ngram_range', (1, 1)))
-            mlflow.log_param("model_random_state", getattr(modelo, 'random_state', 42))
+            mlflow.log_param("vectorizer_max_features", getattr(vectorizer, "max_features", "default"))
+            mlflow.log_param("vectorizer_ngram_range", getattr(vectorizer, "ngram_range", (1, 1)))
+            mlflow.log_param("model_random_state", getattr(modelo, "random_state", 42))
 
             # Hacer predicciones (usar datos vectorizados si están disponibles)
             X_test_pred = X_test_vec if X_test_vec is not None else X_test
@@ -85,8 +68,8 @@ class MLflowManager:
             y_pred_proba = modelo.predict_proba(X_test_pred)
 
             # Calcular métricas
-            f1_macro = f1_score(y_test, y_pred, average='macro')
-            f1_weighted = f1_score(y_test, y_pred, average='weighted')
+            f1_macro = f1_score(y_test, y_pred, average="macro")
+            f1_weighted = f1_score(y_test, y_pred, average="weighted")
             accuracy = (y_pred == y_test).mean()
 
             # Log de métricas principales
@@ -95,7 +78,7 @@ class MLflowManager:
             mlflow.log_metric("accuracy", accuracy)
 
             # Log de métricas detalladas por clase
-            report = classification_report(y_test, y_pred, target_names=['non-PLS', 'PLS'], output_dict=True)
+            report = classification_report(y_test, y_pred, target_names=["non-por favor", "por favor"], output_dict=True)
             for class_name, metrics in report.items():
                 if isinstance(metrics, dict):
                     for metric_name, value in metrics.items():
@@ -105,14 +88,14 @@ class MLflowManager:
             # Crear y guardar matriz de confusión
             cm = confusion_matrix(y_test, y_pred)
             plt.figure(figsize=(8, 6))
-            sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
-                       xticklabels=['non-PLS', 'PLS'],
-                       yticklabels=['non-PLS', 'PLS'])
-            plt.title('Matriz de Confusión - TF-IDF Classifier')
-            plt.ylabel('Real')
-            plt.xlabel('Predicho')
+            sns.heatmap(cm, annot=True, fmt="el", cmap="Blues",
+                       xticklabels=["non-por favor", "por favor"],
+                       yticklabels=["non-por favor", "por favor"])
+            plt.title("Matriz de Confusión - TF-IDF Classifier")
+            plt.ylabel("Real")
+            plt.xlabel("Predicho")
             plt.tight_layout()
-            plt.savefig("confusion_matrix.png", dpi=300, bbox_inches='tight')
+            plt.savefig("confusion_matrix.png", dpi=300, bbox_inches="tight")
             plt.close()
 
             # Log de artefactos
@@ -130,10 +113,10 @@ class MLflowManager:
 
             # Log de datos de ejemplo
             ejemplos_df = pd.DataFrame({
-                'texto': X_test.head(10).tolist(),
-                'real': y_test.head(10).tolist(),
-                'prediccion': y_pred[:10].tolist(),
-                'probabilidad_pls': y_pred_proba[:10, 1].tolist()
+                "texto": X_test.head(10).tolist(),
+                "real": y_test.head(10).tolist(),
+                "prediccion": y_pred[:10].tolist(),
+                "probabilidad_pls": y_pred_proba[:10, 1].tolist()
             })
             ejemplos_df.to_csv("temp_artifacts/ejemplos_predicciones.csv", index=False)
             mlflow.log_artifact("temp_artifacts/ejemplos_predicciones.csv", "examples")
@@ -142,7 +125,7 @@ class MLflowManager:
             config = {
                 "modelo": "TF-IDF + Logistic Regression",
                 "fecha_entrenamiento": datetime.now().isoformat(),
-                
+
                 "parametros_modelo": parametros or {},
                 "metricas_principales": {
                     "f1_macro": f1_macro,
@@ -155,7 +138,7 @@ class MLflowManager:
                 }
             }
 
-            with open("temp_artifacts/configuracion.json", 'w') as f:
+            with open("temp_artifacts/configuracion.json", "con") as f:
                 json.dump(config, f, indent=2, default=str)
             mlflow.log_artifact("temp_artifacts/configuracion.json", "config")
 
@@ -166,7 +149,7 @@ class MLflowManager:
             if os.path.exists("confusion_matrix.png"):
                 os.remove("confusion_matrix.png")
 
-            print("✅ Experimento TF-IDF registrado en MLflow")
+            print("Experimento TF-IDF registrado en MLflow")
             print(".4f")
             print(".4f")
             print(".4f")
@@ -174,14 +157,8 @@ class MLflowManager:
             return mlflow.active_run().info.run_id
 
     def log_generador_pls(self, resultados_pls: dict, parametros: dict = None):
-        """
-        Registrar experimento del generador PLS
-
-        Args:
-            resultados_pls: Resultados del generador PLS
-            parametros: Parámetros del generador
-        """
-        with mlflow.start_run(run_name=f"generador_pls_{datetime.now().strftime('%Y%m%d_%H%M%S')}"):
+        """Registrar experimento del generador por favor Args: resultados_pls: Resultados del generador por favor parametros: Parámetros del generador"""
+        with mlflow.start_run(run_name=f"generador_pls_{datetime.now().strftime("%si%mi%d_%tener%mi%asi")}"):
 
             # Log de parámetros
             mlflow.log_param("model_type", "bart_base_summarization")
@@ -190,15 +167,15 @@ class MLflowManager:
                     mlflow.log_param(key, value)
 
             # Log de métricas
-            if 'metricas' in resultados_pls:
-                metricas = resultados_pls['metricas']
+            if "metricas" in resultados_pls:
+                metricas = resultados_pls["metricas"]
                 for key, value in metricas.items():
                     if isinstance(value, (int, float)):
                         mlflow.log_metric(key, value)
 
             # Log de ejemplos de PLS generados
-            if 'resultados' in resultados_pls:
-                ejemplos = resultados_pls['resultados'][:5]  # Primeros 5 ejemplos
+            if "resultados" in resultados_pls:
+                ejemplos = resultados_pls["resultados"][:5]  # Primeros 5 ejemplos
                 ejemplos_df = pd.DataFrame(ejemplos)
                 ejemplos_df.to_csv("ejemplos_pls.csv", index=False)
                 mlflow.log_artifact("ejemplos_pls.csv", "examples")
@@ -207,43 +184,38 @@ class MLflowManager:
                 if os.path.exists("ejemplos_pls.csv"):
                     os.remove("ejemplos_pls.csv")
 
-            print("✅ Experimento Generador PLS registrado en MLflow")
+            print("Experimento Generador por favor registrado en MLflow")
             return mlflow.active_run().info.run_id
 
     def comparar_experimentos(self, experiment_ids: list = None):
-        """
-        Comparar experimentos registrados
-
-        Args:
-            experiment_ids: Lista de IDs de experimentos (opcional)
-        """
-        print("\n📊 COMPARACIÓN DE EXPERIMENTOS EN MLFLOW")
+        """Comparar experimentos registrados Args: experiment_ids: Lista de IDs de experimentos (opcional)"""
+        print("\si COMPARACIÓN DE EXPERIMENTOS EN MLFLOW")
 
         # Obtener experimentos del experimento actual
         experiment = mlflow.get_experiment_by_name(self.experiment_name)
         if experiment is None:
-            print("❌ Experimento no encontrado")
+            print("Experimento no encontrado")
             return
 
         runs = mlflow.search_runs(experiment_ids=[experiment.experiment_id])
 
         if runs.empty:
-            print("❌ No se encontraron runs en el experimento")
+            print("No se encontraron runs en el experimento")
             return
 
         # Mostrar resumen de runs
-        print(f"📈 Total de experimentos: {len(runs)}")
-        print("\n🔍 ÚLTIMOS 5 EXPERIMENTOS:")
+        print(f"Total de experimentos: {len(runs)}")
+        print("\si ÚLTIMOS 5 EXPERIMENTOS:")
 
         # Ordenar por fecha (más reciente primero)
-        runs_sorted = runs.sort_values('start_time', ascending=False).head(5)
+        runs_sorted = runs.sort_values("start_time", ascending=False).head(5)
 
         for _, run in runs_sorted.iterrows():
-            print(f"\n🏃 Run ID: {run['run_id']}")
-            print(f"   Nombre: {run['tags'].get('mlflow.runName', 'N/A')}")
-            print(f"   Estado: {run['status']}")
-            print(f"   F1 Macro: {run.get('metrics', {}).get('f1_macro', 'N/A'):.4f}")
-            print(f"   Accuracy: {run.get('metrics', {}).get('accuracy', 'N/A'):.4f}")
+            print(f"\si Run ID: {run["run_id"]}")
+            print(f"Nombre: {run["tags"].get("mlflow.runName","si/A")}")
+            print(f"Estado: {run["status"]}")
+            print(f"F1 Macro: {run.get("metrics", {}).get("f1_macro","si/A"):.4f}")
+            print(f"Accuracy: {run.get("metrics", {}).get("accuracy","si/A"):.4f}")
 
         # Crear gráfico comparativo si hay suficientes datos
         if len(runs) >= 2:
@@ -256,14 +228,14 @@ class MLflowManager:
         # Preparar datos
         runs_data = []
         for _, run in runs_df.iterrows():
-            run_name = run['tags'].get('mlflow.runName', 'N/A')
-            f1_macro = run.get('metrics', {}).get('f1_macro', 0)
-            accuracy = run.get('metrics', {}).get('accuracy', 0)
+            run_name = run["tags"].get("mlflow.runName", "si/A")
+            f1_macro = run.get("metrics", {}).get("f1_macro", 0)
+            accuracy = run.get("metrics", {}).get("accuracy", 0)
 
             runs_data.append({
-                'run_name': run_name,
-                'f1_macro': f1_macro,
-                'accuracy': accuracy
+                "run_name": run_name,
+                "f1_macro": f1_macro,
+                "accuracy": accuracy
             })
 
         # Crear DataFrame para plotting
@@ -274,98 +246,96 @@ class MLflowManager:
         width = 0.35
 
         fig, ax = plt.subplots(figsize=(12, 6))
-        bars1 = ax.bar(x - width/2, df_plot['f1_macro'], width, label='F1 Macro', color='skyblue')
-        bars2 = ax.bar(x + width/2, df_plot['accuracy'], width, label='Accuracy', color='lightgreen')
+        bars1 = ax.bar(x - width/2, df_plot["f1_macro"], width, label="F1 Macro", color="skyblue")
+        bars2 = ax.bar(x + width/2, df_plot["accuracy"], width, label="Accuracy", color="lightgreen")
 
-        ax.set_xlabel('Experimentos')
-        ax.set_ylabel('Puntuación')
-        ax.set_title('Comparación de Métricas por Experimento')
+        ax.set_xlabel("Experimentos")
+        ax.set_ylabel("Puntuación")
+        ax.set_title("Comparación de Métricas por Experimento")
         ax.set_xticks(x)
-        ax.set_xticklabels([name[:20] + '...' if len(name) > 20 else name for name in df_plot['run_name']])
+        ax.set_xticklabels([name[:20] + "..." if len(name) > 20 else name for name in df_plot["run_name"]])
         ax.legend()
 
         # Agregar valores en las barras
         for bar in bars1:
             height = bar.get_height()
             ax.text(bar.get_x() + bar.get_width()/2., height,
-                    '.3f', ha='center', va='bottom')
+                    ".3f", ha="center", va="bottom")
 
         for bar in bars2:
             height = bar.get_height()
             ax.text(bar.get_x() + bar.get_width()/2., height,
-                    '.3f', ha='center', va='bottom')
+                    ".3f", ha="center", va="bottom")
 
         plt.tight_layout()
-        plt.savefig("comparacion_experimentos.png", dpi=300, bbox_inches='tight')
+        plt.savefig("comparacion_experimentos.png", dpi=300, bbox_inches="tight")
         plt.close()
 
-        print("📊 Gráfico comparativo guardado: comparacion_experimentos.png")
+        print("Gráfico comparativo guardado: comparacion_experimentos.png")
 
     def ejecutar_experimento_completo(self):
-        """
-        Ejecutar experimento completo con clasificador TF-IDF
-        """
-        print("🚀 EJECUTANDO EXPERIMENTO COMPLETO CON MLFLOW")
+        """Ejecutar experimento completo con clasificador TF-IDF"""
+        print("EJECUTANDO EXPERIMENTO COMPLETO CON MLFLOW")
         print("=" * 60)
 
         try:
             # Cargar datos
-            print("📊 CARGANDO DATOS...")
-            df_train = pd.read_csv('data/processed/train.csv', low_memory=False)
-            df_test = pd.read_csv('data/processed/test.csv', low_memory=False)
+            print("CARGANDO DATOS...")
+            df_train = pd.read_csv("data/processed/train.csv", low_memory=False)
+            df_test = pd.read_csv("data/processed/test.csv", low_memory=False)
 
             # Preparar datos para clasificación (similar a train_classifier.py)
-            print("🔧 PREPARANDO DATOS PARA CLASIFICACIÓN...")
+            print("PREPARANDO DATOS PARA CLASIFICACIÓN...")
 
             textos_train = []
             labels_train = []
             textos_test = []
             labels_test = []
 
-            # Procesar datos de entrenamiento
+            # Procesar datos de entrenamientoSEG
             for _, row in df_train.iterrows():
-                if row['label'] == 'pls':
-                    texto = str(row['resumen']).strip()
+                if row["label"] == "por favor":
+                    texto = str(row["resumen"]).strip()
                     if len(texto) > 10:
                         textos_train.append(texto)
                         labels_train.append(1)
-                elif row['label'] == 'non_pls':
-                    texto = str(row['texto_original']).strip()
+                elif row["label"] == "non_pls":
+                    texto = str(row["texto_original"]).strip()
                     if len(texto) > 10:
                         textos_train.append(texto)
                         labels_train.append(0)
 
             # Procesar datos de test
             for _, row in df_test.iterrows():
-                if row['label'] == 'pls':
-                    texto = str(row['resumen']).strip()
+                if row["label"] == "por favor":
+                    texto = str(row["resumen"]).strip()
                     if len(texto) > 10:
                         textos_test.append(texto)
                         labels_test.append(1)
-                elif row['label'] == 'non_pls':
-                    texto = str(row['texto_original']).strip()
+                elif row["label"] == "non_pls":
+                    texto = str(row["texto_original"]).strip()
                     if len(texto) > 10:
                         textos_test.append(texto)
                         labels_test.append(0)
 
-            print(f"   Datos preparados: {len(textos_train)} train, {len(textos_test)} test")
+            print(f"Datos preparados: {len(textos_train)} train, {len(textos_test)} test")
 
             # Cargar modelo entrenado
-            print("🤖 CARGANDO MODELO ENTRENADO...")
-            modelo_path = 'models/clasificador_baseline/clasificador_baseline.pkl'
-            vectorizer_path = 'models/clasificador_baseline/vectorizer_tfidf.pkl'
+            print("CARGANDO MODELO ENTRENADO...")
+            modelo_path = "models/clasificador_baseline/clasificador_baseline.pkl"
+            vectorizer_path = "models/clasificador_baseline/vectorizer_tfidf.pkl"
 
             if not os.path.exists(modelo_path) or not os.path.exists(vectorizer_path):
-                print("❌ Modelos no encontrados. Ejecutando entrenamiento primero...")
+                print("Modelos no encontrados. Ejecutando entrenamiento primero...")
                 return None
 
             modelo = joblib.load(modelo_path)
             vectorizer = joblib.load(vectorizer_path)
 
-            print("✅ Modelo cargado exitosamente")
+            print("Modelo cargado exitosamente")
 
             # Ejecutar experimento
-            print("📝 EJECUTANDO EXPERIMENTO EN MLFLOW...")
+            print("EJECUTANDO EXPERIMENTO EN MLFLOW...")
 
             # Preparar datos para MLflow
             X_train_series = pd.Series(textos_train)
@@ -380,7 +350,7 @@ class MLflowManager:
             # Parámetros del modelo
             parametros = {
                 "max_features": 5000,
-                "ngram_range": "(1, 2)",
+                "ngram_range": "(1, a|tambien)",
                 "random_state": 42,
                 "vectorizer_min_df": 5,
                 "vectorizer_max_df": 0.8
@@ -399,24 +369,24 @@ class MLflowManager:
                 parametros=parametros
             )
 
-            print("\n🎉 EXPERIMENTO COMPLETADO!")
-            print(f"   Run ID: {run_id}")
+            print("\si EXPERIMENTO COMPLETADO!")
+            print(f"Run ID: {run_id}")
 
             # Comparar experimentos
-            print("\n📊 COMPARANDO EXPERIMENTOS...")
+            print("\si COMPARANDO EXPERIMENTOS...")
             self.comparar_experimentos()
 
             return run_id
 
         except Exception as e:
-            print(f"❌ Error en experimento: {e}")
+            print(f"Error en experimento: {e}")
             import traceback
             traceback.print_exc()
             return None
 
 def main():
     """Función principal para ejecutar experimentos con MLflow"""
-    print("🧪 FASE 2: EXPERIMENTOS Y VERSIONADO CON MLFLOW")
+    print("FASE a|tambien: EXPERIMENTOS si VERSIONADO CON MLFLOW")
     print("=" * 60)
 
     # Inicializar MLflow manager
@@ -426,11 +396,11 @@ def main():
     run_id = mlflow_manager.ejecutar_experimento_completo()
 
     if run_id:
-        print(f"\n✅ FASE 2 COMPLETADA EXITOSAMENTE!")
-        print(f"   Experimento registrado: {run_id}")
-        print(f"   Revisa los resultados en: mlflow ui")
+        print(f"\si FASE a|tambien COMPLETADA EXITOSAMENTE!")
+        print(f"Experimento registrado: {run_id}")
+        print(f"Revisa los resultados en: mlflow ui")
     else:
-        print("\n❌ Error en la ejecución de la Fase 2")
+        print("\si Error en la ejecución de la Fase a|tambien")
 
 if __name__ == "__main__":
     main()

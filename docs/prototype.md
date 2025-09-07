@@ -234,20 +234,20 @@ Evita copiar frases textuales; no inventes datos."
 
 ```
 pds-proyecto-final/
-├── data/
-│   ├── raw/           # Datos originales
-│   ├── processed/     # Datos procesados
-│   ├── outputs/       # PLS generados
-│   └── evaluation/    # Resultados de evaluación
-├── src/
-│   ├── data/          # Scripts de procesamiento
-│   ├── models/        # Modelos y entrenamiento
-│   └── utils/         # Utilidades
-├── models/             # Modelos entrenados
-├── docs/               # Documentación y reportes
-├── notebooks/          # Jupyter notebooks
-├── dvc.yaml           # Pipeline DVC
-└── params.yaml        # Parámetros de configuración
+ data/
+    raw/           # Datos originales
+    processed/     # Datos procesados
+    outputs/       # PLS generados
+    evaluation/    # Resultados de evaluación
+ src/
+    data/          # Scripts de procesamiento
+    models/        # Modelos y entrenamiento
+    utils/         # Utilidades
+ models/             # Modelos entrenados
+ docs/               # Documentación y reportes
+ notebooks/          # Jupyter notebooks
+ dvc.yaml           # Pipeline DVC
+ params.yaml        # Parámetros de configuración
 ```
 
 ## Alcance del Proyecto

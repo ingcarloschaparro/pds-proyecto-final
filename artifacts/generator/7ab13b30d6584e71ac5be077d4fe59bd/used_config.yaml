@@ -1,0 +1,101 @@
+artifacts:
+  base_dir: artifacts/generator
+  hist_fkgl_pls: hist_fkgl_pls.png
+  hist_fkgl_src: hist_fkgl_src.png
+  hist_length_pls: hist_length_pls.png
+  lora_adapters: adapters
+  metrics_by_source: metrics_by_source.csv
+  metrics_global: metrics_global.json
+  model_dir: model
+  samples_eval: samples_eval.csv
+  used_config: used_config.yaml
+data:
+  doc_id_col: doc_id
+  path: data/processed/dataset_clean_v1.csv
+  random_state: 42
+  source_col: source
+  test_size: 0.1
+  text_pls_col: resumen
+  text_source_col: texto_original
+  val_size: 0.2
+environment:
+  device: auto
+  evaluation_timeout_min: 60
+  generation_timeout_sec: 30
+  max_memory_mb: 4096
+  num_workers: 4
+evaluation:
+  bertscore:
+    batch_size: 16
+    model_type: microsoft/DistilBERT-base-uncased
+  fkgl_target_max: 8.0
+  length_target_max: 250
+  length_target_min: 120
+  meteor:
+    alpha: 0.9
+    beta: 3.0
+    gamma: 0.5
+  metrics:
+  - rouge_l
+  - meteor
+  - bertscore_f1
+  - fkgl_src
+  - fkgl_pred
+  - compression_ratio
+  rouge:
+    use_stemmer: true
+generator:
+  base_model: facebook/bart-large-cnn
+  eval_subset_size: 500
+  max_input_length: 1024
+  max_length_tokens: 200
+  min_length_tokens: 80
+  num_beams: 4
+  strategy: zero-shot
+  temperature: 0.8
+  truncation_side: right
+logging:
+  error_file: logs/generator_errors.log
+  format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  level: INFO
+  log_file: logs/generator.log
+lora:
+  base_model: facebook/bart-base
+  batch_size: 4
+  epochs: 3
+  gradient_accumulation_steps: 4
+  lora_alpha: 32
+  lora_r: 16
+  lr: 5e-5
+  seed: 42
+  train_frac: 1.0
+  warmup_ratio: 0.1
+  weight_decay: 0.01
+mlflow:
+  experiment: generator_pls
+  run_name_prefix: pls_gen
+  tags:
+    base_model: facebook/bart-large-cnn
+    lora: 'false'
+    phase: F1
+    source_mix: global
+    strategy: zero-shot
+    synthetic: false
+    task: generator
+model_configs:
+  bart_base:
+    max_input_length: 1024
+    model_name: facebook/bart-base
+    recommended_max_length: 150
+    recommended_min_length: 60
+  bart_large_cnn:
+    max_input_length: 1024
+    model_name: facebook/bart-large-cnn
+    recommended_max_length: 200
+    recommended_min_length: 80
+  t5_base:
+    max_input_length: 512
+    model_name: t5-base
+    prefix: 'summarize: '
+    recommended_max_length: 120
+    recommended_min_length: 50
