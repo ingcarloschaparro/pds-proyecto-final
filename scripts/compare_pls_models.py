@@ -1,8 +1,5 @@
-import scripts._logging_header  # configure logging
 #!/usr/bin/env python3
-"""Comparación completa de modelos por favor en MLflow Ejecuta si compara: BART-Base, BART-Large-CNN, T5-Base, si por favor Ligero"""
-from src.config.mlflow_remote import apply_tracking_uri as _mlf_apply
-_mlf_apply(experiment="E2-Compare-PLS")
+"""Comparación completa de modelos PLS en MLflow Ejecuta y compara: BART-Base, BART-Large-CNN, T5-Base, PLS Ligero"""
 
 
 import pandas as pd
@@ -20,7 +17,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 class PLSModelComparator:
-    """Comparador de modelos por favor"""
+    """Comparador de modelos PLS"""
 
     def __init__(self):
         self.models = {}
@@ -30,15 +27,15 @@ class PLSModelComparator:
     def _load_test_texts(self) -> List[str]:
         """Cargar textos de prueba médicos"""
         return [
-            "el study evaluated el effects de metformin on glycemic control en patients con type a|tambien diabetes mellitus. Participants received either metformin 500mg twice daily o placebo para 12 weeks. el primary outcome was change en HbA1c levels from baseline.",
+            "The study evaluated the effects of metformin on glycemic control in patients with type 2 diabetes mellitus. Participants received either metformin 500mg twice daily or placebo for 12 weeks. The primary outcome was change in HbA1c levels from baseline.",
 
-            "Randomized controlled trial comparing laparoscopic vs open cholecystectomy para symptomatic cholelithiasis. el intervention group underwent laparoscopic procedure while control group received open surgery. Primary endpoints included operative time, postoperative complications, si length de hospital stay.",
+            "Randomized controlled trial comparing laparoscopic vs open cholecystectomy for symptomatic cholelithiasis. The intervention group underwent laparoscopic procedure while control group received open surgery. Primary endpoints included operative time, postoperative complications, and length of hospital stay.",
 
-            "Clinical trial investigating el efficacy de atorvastatin 20mg daily versus placebo en reducing cardiovascular events en patients con hypercholesterolemia. el study enrolled 500 participants si followed them para a|tambien years, measuring LDL cholesterol levels si incidence de myocardial infarction.",
+            "Clinical trial investigating the efficacy of atorvastatin 20mg daily versus placebo in reducing cardiovascular events in patients with hypercholesterolemia. The study enrolled 500 participants and followed them for 2 years, measuring LDL cholesterol levels and incidence of myocardial infarction.",
 
-            "A prospective cohort study examining el relationship between vitamin el deficiency si bone mineral density en postmenopausal women. el researchers measured serum 25-hydroxyvitamin el levels si performed dual-energy ex-ray absorptiometry scans a|tambien assess BMD at el lumbar spine si femoral neck.",
+            "A prospective cohort study examining the relationship between vitamin D deficiency and bone mineral density in postmenopausal women. The researchers measured serum 25-hydroxyvitamin D levels and performed dual-energy x-ray absorptiometry scans to assess BMD at the lumbar spine and femoral neck.",
 
-            "Double-blind placebo-controlled trial assessing el effectiveness de cognitive behavioral therapy combined con selective serotonin reuptake inhibitors para treatment-resistant major depressive disorder. Patients were randomized a|tambien receive either CBT plus SSRI o SSRI plus placebo para 16 weeks."
+            "Double-blind placebo-controlled trial assessing the effectiveness of cognitive behavioral therapy combined with selective serotonin reuptake inhibitors for treatment-resistant major depressive disorder. Patients were randomized to receive either CBT plus SSRI or SSRI plus placebo for 16 weeks."
         ]
 
     def setup_mlflow(self):
@@ -47,8 +44,8 @@ class PLSModelComparator:
         mlflow.set_experiment("E2-PLS-Models-Comparison")
 
     def initialize_models(self):
-        """Inicializar todos los modelos por favor"""
-        print("INICIALIZANDO MODELOS por favor")
+        """Inicializar todos los modelos PLS"""
+        print("INICIALIZANDO MODELOS PLS")
         print("=" * 50)
 
         # Determinar dispositivo
@@ -128,17 +125,17 @@ class PLSModelComparator:
         self.models["pls_lightweight"] = {
             "model": self.generate_simple_pls,
             "type": "rule_based",
-            "model_name": "por favor Ligero",
+            "model_name": "PLS Ligero",
             "size": "Light"
         }
-        print("por favor Ligero inicializado")
+        print("PLS Ligero inicializado")
 
         print(f" -  Total modelos inicializados: {len(self.models)}")
         for name, config in self.models.items():
-            print(f"• {name}: {config["model_name"]} ({config["type"]})")
+            print(f"• {name}: {config['model_name']} ({config['type']})")
 
     def generate_simple_pls(self, text: str) -> str:
-        """Generar por favor usando reglas simples"""
+        """Generar PLS usando reglas simples"""
         # Diccionario de términos médicos a lenguaje simple
         medical_terms = {
             "metformin": "medicamento para la diabetes",
@@ -190,12 +187,12 @@ class PLSModelComparator:
             pls = ".".join(sentences[:2]) + "."
 
         # Añadir prefijo explicativo
-        pls = "En términos simples: por favor"
+        pls = "En términos simples: PLS"
 
         return pls
 
     def calculate_metrics(self, original_text: str, generated_text: str) -> Dict[str, float]:
-        """Calcular métricas de calidad por favor"""
+        """Calcular métricas de calidad PLS"""
         try:
             import textstat
 
@@ -246,7 +243,7 @@ class PLSModelComparator:
         results = []
         total_time = 0
 
-        with mlflow.start_run(run_name=f"pls_{model_name}_{datetime.now().strftime("%si%mi%d_%tener%mi%asi")}"):
+        with mlflow.start_run(run_name=f"pls_{model_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"):
 
             # Log parámetros del modelo
             mlflow.log_params({
@@ -336,11 +333,11 @@ class PLSModelComparator:
                 self._log_artifacts(model_name, results, aggregated_metrics)
 
                 print(" -  MÉTRICAS FINALES:")
-                print(f"• Compresión promedio: {aggregated_metrics["avg_compression_ratio"]:.3f}")
-                print(f"• FKGL promedio: {aggregated_metrics["avg_fkgl_score"]:.1f}")
-                print(f"• Flesch Reading Ease: {aggregated_metrics["avg_flesch_reading_ease"]:.1f}")
-                print(f"• Tiempo promedio: {aggregated_metrics["avg_processing_time"]:.2f}asi")
-                print(f"• Generaciones exitosas: {aggregated_metrics["successful_generations"]}/5")
+                print(f"• Compresión promedio: {aggregated_metrics['avg_compression_ratio']:.3f}")
+                print(f"• FKGL promedio: {aggregated_metrics['avg_fkgl_score']:.1f}")
+                print(f"• Flesch Reading Ease: {aggregated_metrics['avg_flesch_reading_ease']:.1f}")
+                print(f"• Tiempo promedio: {aggregated_metrics['avg_processing_time']:.2f}s")
+                print(f"• Generaciones exitosas: {aggregated_metrics['successful_generations']}/5")
 
                 return {
                     "model_name": model_name,
@@ -394,7 +391,7 @@ class PLSModelComparator:
 
     def run_comparison(self):
         """Ejecutar comparación completa de todos los modelos"""
-        print("INICIANDO COMPARACIÓN COMPLETA DE MODELOS por favor")
+        print("INICIANDO COMPARACIÓN COMPLETA DE MODELOS PLS")
         print("=" * 70)
 
         if not self.models:
@@ -445,13 +442,13 @@ class PLSModelComparator:
             metrics = result["aggregated_metrics"]
             comparison_data.append({
                 "Modelo": result["model_name"],
-                "Tipo": self.models[result["model_name"]]["type"],
-                "Tamaño": self.models[result["model_name"]]["size"],
-                "Compresión": f"{metrics.get("avg_compression_ratio", 0):.3f}",
-                "FKGL": f"{metrics.get("avg_fkgl_score", 0):.1f}",
-                "Flesch": f"{metrics.get("avg_flesch_reading_ease", 0):.1f}",
-                "Tiempo (asi)": f"{metrics.get("avg_processing_time", 0):.2f}",
-                "Éxitos": f"{metrics.get("successful_generations", 0)}/5"
+                "Tipo": self.models[result['model_name']]['type'],
+                "Tamaño": self.models[result['model_name']]['size'],
+                "Compresión": f"{metrics.get('avg_compression_ratio', 0):.3f}",
+                "FKGL": f"{metrics.get('avg_fkgl_score', 0):.1f}",
+                "Flesch": f"{metrics.get('avg_flesch_reading_ease', 0):.1f}",
+                "Tiempo (s)": f"{metrics.get('avg_processing_time', 0):.2f}",
+                "Éxitos": f"{metrics.get('successful_generations', 0)}/5"
             })
 
         comparison_df = pd.DataFrame(comparison_data)
@@ -464,7 +461,7 @@ class PLSModelComparator:
         report_dir = "reports"
         os.makedirs(report_dir, exist_ok=True)
 
-        report_file = f"{report_dir}/pls_models_comparison_{datetime.now().strftime("%si%mi%d_%tener%mi%asi")}.csv"
+        report_file = f"{report_dir}/pls_models_comparison_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
         comparison_df.to_csv(report_file, index=False)
 
         print(f" -  Reporte guardado en: {report_file}")
@@ -500,7 +497,7 @@ class PLSModelComparator:
 
 def main():
     """Función principal"""
-    print("COMPARADOR DE MODELOS por favor - MLFLOW")
+    print("COMPARADOR DE MODELOS PLS - MLFLOW")
     print("=" * 60)
 
     comparator = PLSModelComparator()

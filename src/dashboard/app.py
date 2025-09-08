@@ -833,7 +833,7 @@ Este dashboard interactivo te permite:
         st.sidebar.markdown("### Enlaces Útiles")
 
         if st.sidebar.button("Abrir MLflow UI"):
-            st.sidebar.markdown("[Abrir MLflow](http://localhost:5000)")
+            st.sidebar.markdown("[Abrir MLflow](http://52.0.127.25:5001)")
 
         if st.sidebar.button("Documentación"):
             st.sidebar.markdown("[Ver Docs](https://github.com/gabrielchaparro/pds-proyecto-final)")

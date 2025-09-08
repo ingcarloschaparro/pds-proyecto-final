@@ -261,7 +261,6 @@ stages:
 
 ### 📖 Guías Disponibles
 - `docs/diagnostico-inicial-pls.md` - Diagnóstico técnico completo
-- `docs/evaluacion_rubrica_entrega2.md` - Evaluación de cumplimiento
 - `dashboard/README.md` - Guía específica del dashboard
 - `docs/prototype.md` - Prototipo y arquitectura
 
@@ -272,63 +271,22 @@ stages:
 
 ---
 
-## 🏆 Logros del Proyecto
-
-### ✅ **Completado (85%)**
-
-#### **Ítem 1: Resumen del problema** (10/10 pts)
-- ✅ Diagnóstico técnico exhaustivo
-- ✅ Problema bien definido y contextualizado
-- ✅ Alcance y datos claramente especificados
-
-#### **Ítem 2: Modelos desarrollados** (28/35 pts)
-- ✅ 4 modelos PLS completamente implementados
-- ✅ Evaluación exhaustiva con métricas apropiadas
-- ✅ Integración completa con MLflow
-- ✅ Comparación sistemática de rendimiento
-
-#### **Ítem 4: Dashboard desarrollado** (35/35 pts) ⭐ **NUEVO**
-- ✅ Dashboard completamente funcional
-- ✅ Interfaz intuitiva y profesional
-- ✅ Todas las funcionalidades requeridas
-- ✅ Visualizaciones interactivas
-- ✅ Prueba en vivo de modelos
-
-### ⚠️ **Pendiente (15%)**
-
-#### **Ítem 3: Observaciones y conclusiones** (6/10 pts)
-- ✅ Métricas básicas documentadas
-- ❌ Análisis comparativo profundo pendiente
-- ❌ Recomendaciones específicas pendientes
-
-#### **Ítem 5: Reporte de equipo** (0/10 pts)
-- ❌ Reporte de trabajo en equipo pendiente
-
----
-
-## 🎯 Próximos Pasos Recomendados
-
-### **Prioridad 1: Completar evaluación** (4 puntos)
-```bash
-# Crear documento de conclusiones
-docs/conclusiones_modelos.md
-```
-
-### **Prioridad 2: Reporte de equipo** (10 puntos)
-```bash
-# Crear reporte de trabajo en equipo
-docs/reporte_equipo.md
-```
-
-### **Puntuación Final Objetivo**: 93/100 puntos 🎯
-
----
-
 ## 👥 Equipo y Contribución
 
-### 🤝 Colaboradores
-- **Gabriel Chaparro** - Desarrollo principal y arquitectura
-- **Proyecto académico** - Universidad de los Andes
+
+## Miembros del Equipo
+- Erika Cárdenas: Documentación y testing
+- Carlos Chaparro: Documentación y testing
+- Jean Munevar: Desarrollo de modelos PLS, implementación del dashboard, evaluación y métricas
+- Gabriela Munevar: Desarrollo de modelos PLS, implementación del dashboard, evaluación y métricas
+
+
+## Contribuciones Individuales
+- **Erika Cárdenas**: Encargada de la documentación técnica y pruebas de funcionalidad.  
+- **Carlos Chaparro**: Encargado de la documentación técnica y pruebas de funcionalidad.  
+- **Jean Munevar**: Responsable de la construcción de modelos PLS, diseño e implementación del dashboard, y análisis de métricas.  
+- **Gabriela Munevar**: Responsable de la construcción de modelos PLS, diseño e implementación del dashboard, y análisis de métricas.  
+
 
 ### 📝 Cómo Contribuir
 1. Fork el repositorio
@@ -339,21 +297,6 @@ docs/reporte_equipo.md
 ### 🐛 Reportar Problemas
 - [GitHub Issues](https://github.com/gabrielchaparro/pds-proyecto-final/issues)
 - Incluir: descripción, pasos para reproducir, logs de error
-
----
-
-## 📄 Licencia
-
-Este proyecto está bajo la **Licencia MIT**. Ver [LICENSE](LICENSE) para más detalles.
-
----
-
-## 🙏 Agradecimientos
-
-- **Universidad de los Andes** - Apoyo académico
-- **ProyectoDSIA** - Inspiración para la arquitectura
-- **HuggingFace** - Modelos transformer
-- **MLflow/DVC** - Herramientas de MLOps
 
 ---
 
