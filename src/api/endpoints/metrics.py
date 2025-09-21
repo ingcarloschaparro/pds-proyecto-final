@@ -14,7 +14,6 @@ class MetricsResponse(BaseModel):
     """Modelo de respuesta para métricas de rendimiento"""
     timestamp: float = Field(..., description="Timestamp de las métricas")
     model_performance: Dict[str, Any] = Field(..., description="Métricas de rendimiento del modelo")
-    system_metrics: Dict[str, Any] = Field(..., description="Métricas del sistema")
     quality_metrics: Dict[str, Any] = Field(..., description="Métricas de calidad históricas")
     baseline_comparison: Dict[str, Any] = Field(..., description="Comparación con métricas baseline")
 
@@ -36,8 +35,6 @@ async def get_performance_metrics() -> MetricsResponse:
         metrics_calculator = get_metrics_calculator()
         quality_summary = metrics_calculator.get_metrics_summary()
         
-        # Obtener métricas del sistema
-        system_metrics = _get_system_metrics()
         
         # Comparación con baseline
         baseline_comparison = _get_baseline_comparison(quality_summary)
@@ -46,7 +43,6 @@ async def get_performance_metrics() -> MetricsResponse:
         response_data = {
             "timestamp": current_time,
             "model_performance": model_performance,
-            "system_metrics": system_metrics,
             "quality_metrics": quality_summary,
             "baseline_comparison": baseline_comparison
         }
@@ -138,50 +134,6 @@ async def get_metrics_health() -> Dict[str, Any]:
             detail="Error interno analizando salud de métricas"
         )
 
-def _get_system_metrics() -> Dict[str, Any]:
-    """Obtener métricas del sistema"""
-    try:
-        import psutil
-        
-        # CPU
-        cpu_percent = psutil.cpu_percent(interval=1)
-        cpu_count = psutil.cpu_count()
-        
-        # Memoria
-        memory = psutil.virtual_memory()
-        memory_total_gb = memory.total / (1024**3)
-        memory_used_gb = memory.used / (1024**3)
-        memory_percent = memory.percent
-        
-        # Disco
-        disk = psutil.disk_usage('/')
-        disk_total_gb = disk.total / (1024**3)
-        disk_used_gb = disk.used / (1024**3)
-        disk_percent = (disk.used / disk.total) * 100
-        
-        return {
-            "cpu": {
-                "usage_percent": round(cpu_percent, 2),
-                "count": cpu_count,
-                "load_average": psutil.getloadavg() if hasattr(psutil, 'getloadavg') else None
-            },
-            "memory": {
-                "total_gb": round(memory_total_gb, 2),
-                "used_gb": round(memory_used_gb, 2),
-                "usage_percent": round(memory_percent, 2),
-                "available_gb": round(memory.available / (1024**3), 2)
-            },
-            "disk": {
-                "total_gb": round(disk_total_gb, 2),
-                "used_gb": round(disk_used_gb, 2),
-                "usage_percent": round(disk_percent, 2),
-                "free_gb": round(disk.free / (1024**3), 2)
-            }
-        }
-        
-    except Exception as e:
-        logger.error(f"Error obteniendo métricas del sistema: {e}")
-        return {"error": str(e)}
 
 def _get_baseline_comparison(quality_summary: Dict[str, Any]) -> Dict[str, Any]:
     """Obtener comparación con métricas baseline"""
@@ -298,12 +250,6 @@ def _get_optimization_recommendations(metrics: MetricsResponse) -> List[str]:
             if avg_metrics.get("compression_ratio", 0) < 0.2:
                 recommendations.append("Ajustar parámetros para mejor compresión")
         
-        # Analizar métricas del sistema
-        if metrics.system_metrics.get("memory", {}).get("usage_percent", 0) > 80:
-            recommendations.append("Considerar aumentar memoria disponible o optimizar uso")
-        
-        if metrics.system_metrics.get("cpu", {}).get("usage_percent", 0) > 90:
-            recommendations.append("Considerar escalado horizontal o optimización de CPU")
         
         if not recommendations:
             recommendations.append("Sistema funcionando dentro de parámetros óptimos")
@@ -320,9 +266,7 @@ def _analyze_health(metrics: MetricsResponse) -> Dict[str, Any]:
         health_indicators = {
             "model_loaded": True,
             "processing_time_ok": metrics.model_performance.get("average_processing_time", 0) < 10.0,
-            "success_rate_ok": metrics.model_performance.get("success_rate", 0) > 0.8,
-            "memory_ok": metrics.system_metrics.get("memory", {}).get("usage_percent", 0) < 90,
-            "cpu_ok": metrics.system_metrics.get("cpu", {}).get("usage_percent", 0) < 95
+            "success_rate_ok": metrics.model_performance.get("success_rate", 0) > 0.8
         }
         
         healthy_indicators = sum(health_indicators.values())
@@ -363,24 +307,6 @@ def _generate_alerts(metrics: MetricsResponse) -> List[Dict[str, Any]]:
                 "threshold": 0.8
             })
         
-        # Alertas de sistema
-        if metrics.system_metrics.get("memory", {}).get("usage_percent", 0) > 90:
-            alerts.append({
-                "type": "system",
-                "severity": "warning",
-                "message": "Uso de memoria alto",
-                "value": metrics.system_metrics.get("memory", {}).get("usage_percent", 0),
-                "threshold": 90
-            })
-        
-        if metrics.system_metrics.get("cpu", {}).get("usage_percent", 0) > 95:
-            alerts.append({
-                "type": "system",
-                "severity": "error",
-                "message": "Uso de CPU crítico",
-                "value": metrics.system_metrics.get("cpu", {}).get("usage_percent", 0),
-                "threshold": 95
-            })
         
         return alerts
         
@@ -409,18 +335,6 @@ def _calculate_health_score(metrics: MetricsResponse) -> float:
         score += performance_score * performance_weight
         total_weight += performance_weight
         
-        # Peso de métricas del sistema (30%)
-        system_weight = 0.3
-        memory_usage = metrics.system_metrics.get("memory", {}).get("usage_percent", 0)
-        cpu_usage = metrics.system_metrics.get("cpu", {}).get("usage_percent", 0)
-        
-        # Normalizar métricas del sistema (0-1, menor uso es mejor)
-        memory_score = max(0, 1 - (memory_usage / 100.0))
-        cpu_score = max(0, 1 - (cpu_usage / 100.0))
-        
-        system_score = (memory_score + cpu_score) / 2
-        score += system_score * system_weight
-        total_weight += system_weight
         
         # Peso de métricas de calidad (30%)
         quality_weight = 0.3
@@ -470,8 +384,6 @@ def _get_health_recommendations(health_score: float, alerts: List[Dict[str, Any]
                 recommendations.append("Optimizar procesamiento del modelo")
             elif alert["type"] == "reliability":
                 recommendations.append("Investigar causas de fallos")
-            elif alert["type"] == "system":
-                recommendations.append("Revisar recursos del sistema")
         
         return recommendations
         
