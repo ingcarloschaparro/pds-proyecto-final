@@ -220,22 +220,22 @@ Copie el campo **service_url** ya que lo usaremos en el siguiente paso.
 
 Para comprobar esto, ingrese a la consola de AWS, ECS, pestaña Tasks y verifique el estado de las tareas (el Health status debe verse Running):
 
-![Consola AWS ECS](./docs/AWS_ECS_after.png)
+![Consola AWS ECS](./docs/images/AWS_ECS_after.png)
 
 1. Abra la colección de Postman que se encuentra en *test/[PDS]_Proyecto_Final_API.postman_collection.json*.
 2. De clic sobre el nombre de la colección y en la sección Variables, cambie el valor de la variable *main_url* por el valor *service_url* copiado en la sección 3, como se puede ver en la siguiente imagen 
 
-![Postman antes](./docs/Postman_before.png)
+![Postman antes](./docs/images/Postman_before.png)
 
-![Postman después](./docs/Postman_after.png)
+![Postman después](./docs/images/Postman_after.png)
 
 3. Ejecute uno a uno los request disponibles en la colección:
 
-![Postman después](./docs/Postman_colecciones.png)
+![Postman después](./docs/images/Postman_colecciones.png)
 
 4. Verifique los resultados obtenidos:
 
-![Postman después](./docs/Postman_resultados.png)
+![Postman después](./docs/images/Postman_resultados.png)
 
 #### 4.2 Tablero:
 
@@ -251,5 +251,14 @@ terraform -chdir=$(pwd)/terraform/stacks/ecs destroy -var-file=$(pwd)/terraform/
 
 # 2. Borrar ECR
 terraform -chdir=$(pwd)/terraform/stacks/container_registry destroy -var-file=$(pwd)/terraform/environments/default/container_registry/terraform.tfvars
+
+# 3. Borrar el Bucket S3
+aws s3api create-bucket --bucket terraform-dann-ingcarloschaparro --region us-east-1 --debug
+
+aws s3api list-objects --bucket terraform-pds-pls --query 'Contents[].Key' --output text | xargs -n 1 
+aws s3api delete-object --bucket terraform-pds-pls --key
+
+aws s3api delete-bucket --bucket terraform-pds-pls
+
 ```
 
