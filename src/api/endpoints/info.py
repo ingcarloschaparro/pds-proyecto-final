@@ -1,5 +1,5 @@
 from typing import Any, Dict, List
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from loguru import logger
 

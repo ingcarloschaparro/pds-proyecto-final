@@ -226,7 +226,7 @@ def _get_baseline_comparison(quality_summary: Dict[str, Any]) -> Dict[str, Any]:
                     else:
                         status = "equal"
                 
-                comparison[metric] {
+                comparison[metric] = {
                     "current": current_value,
                     "baseline": baseline_value,
                     "difference_percent": round(diff_percent, 2),

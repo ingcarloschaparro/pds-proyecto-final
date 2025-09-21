@@ -4,6 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from loguru import logger
 
+import uvicorn
+from dotenv import load_dotenv
+
 from .config import settings, setup_app_logging
 from .endpoints import generate, health, info, metrics
 
@@ -138,10 +141,10 @@ app.include_router(metrics.router, prefix=settings.API_V1_STR, tags=["Métricas"
 @app.on_event("startup")
 async def startup_event():
     """Evento de inicio de la aplicación"""
-        logger.info("Iniciando API T5-Base...")
-        logger.info(f"Proyecto: {settings.PROJECT_NAME}")
-        logger.info(f"CORS Origins: {settings.BACKEND_CORS_ORIGINS}")
-        logger.info("API iniciada correctamente")
+    logger.info("Iniciando API T5-Base...")
+    logger.info(f"Proyecto: {settings.PROJECT_NAME}")
+    logger.info(f"CORS Origins: {settings.BACKEND_CORS_ORIGINS}")
+    logger.info("API iniciada correctamente")
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -175,8 +178,8 @@ import time
 # Función para ejecutar la aplicación
 def run_app():
     """Función para ejecutar la aplicación en modo desarrollo"""
-    import uvicorn
-    
+    load_dotenv()
+
     logger.warning("Ejecutando en modo desarrollo. No usar en producción.")
     
     uvicorn.run(

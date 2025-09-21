@@ -1,10 +1,11 @@
 from typing import Any, Dict
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
 from loguru import logger
 import time
 import psutil
 import platform
+
+from pydantic import BaseModel, Field
 
 from ..models.t5_base_api import get_t5_model
 
