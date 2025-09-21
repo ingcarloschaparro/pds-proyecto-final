@@ -256,3 +256,5 @@ data/outputs/
 
 # Incluir explícitamente estos archivos
 !src/models/
+
+.idea/
