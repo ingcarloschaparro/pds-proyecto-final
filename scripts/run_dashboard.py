@@ -188,7 +188,7 @@ DEPENDENCIAS:
 
 def main():
     """Función principal"""
-    parser = argparse.ArgumentParser(description="Dashboard por favor - Inicio Rápido")
+    parser = argparse.ArgumentParser(description="Dashboard por favor - Inicio Rápido", add_help=False)
     parser.add_argument("-p", "--port", type=int, default=8501, help="Puerto para el dashboard (default: 8501)")
     parser.add_argument("-b", "--browser", action="store_true", default=True, help="Abrir navegador automáticamente")
     parser.add_argument("--no-browser", action="store_true", help="No abrir navegador automáticamente")
