@@ -42,7 +42,7 @@ def main():
                 pass
         rows.append(item)
     out = OUT / "raw_manifest.csv"
-    with out.open("con", newline="", encoding="utf-8") as f:
+    with out.open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(
             f, fieldnames=["rel_path", "bytes", "suffix", "sha256", "lang"]
         )

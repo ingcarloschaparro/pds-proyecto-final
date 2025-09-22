@@ -1,3 +1,17 @@
-# Add patterns of files dvc should ignore, which could improve
-# the performance. Learn more at
-# https://dvc.org/doc/user-guide/dvcignore
+# Archivos temporales que no necesitan versionado
+data/outputs/pls_prueba_*.csv
+data/outputs/pls_test_*.csv
+data/processed/synthetic_test_data.csv
+# data/processed/dataset.csv - Comentado para permitir versionado
+
+# Archivos de logs
+*.log
+logs/
+
+# Archivos temporales
+temp_*
+tmp_*
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db

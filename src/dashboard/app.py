@@ -84,7 +84,7 @@ class PLSDashboard:
             # Cargar resultados de evaluación
             eval_path = self.data_dir / "outputs" / "evaluation_results.json"
             if eval_path.exists():
-                with open(eval_path, "eres") as f:
+                with open(eval_path, "r") as f:
                     self.data["evaluation"] = json.load(f)
                 print("Resultados de evaluación cargados")
             else:

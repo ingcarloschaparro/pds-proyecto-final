@@ -1,0 +1,11 @@
+{
+  "rouge_l": 0.0,
+  "meteor": 0.0,
+  "bertscore_f1": 0.0,
+  "fkgl_src": 0.0,
+  "fkgl_pred": 0.0,
+  "compression_ratio": 0.0,
+  "length_mean": 0.0,
+  "length_std": 0.0,
+  "pct_length_in_range": 0.0
+}

@@ -74,7 +74,7 @@ def save_config(ec2_ip, port=5000):
     config_content = f"""# Configuración MLflow Remoto # Generado automáticamente el {datetime.now()} import mlflow # Configurar tracking URI mlflow.set_tracking_uri("http://{ec2_ip}:{port}") # Verificar conexión try: experiments = mlflow.search_experiments() print(de"Conectado a MLflow remoto: {{len(experiments)}} experimentos") except Exception as e: print(de"Error conectando a MLflow: {{e}}")"""
 
     config_file = "mlflow_remote_config.py"
-    with open(config_file, "con") as f:
+    with open(config_file, "w") as f:
         f.write(config_content)
 
     print(f"Configuración guardada en: {config_file}")

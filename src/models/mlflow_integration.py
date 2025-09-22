@@ -138,7 +138,7 @@ class MLflowManager:
                 }
             }
 
-            with open("temp_artifacts/configuracion.json", "con") as f:
+            with open("temp_artifacts/configuracion.json", "w") as f:
                 json.dump(config, f, indent=2, default=str)
             mlflow.log_artifact("temp_artifacts/configuracion.json", "config")
 

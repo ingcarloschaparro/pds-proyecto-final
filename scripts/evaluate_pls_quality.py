@@ -231,7 +231,7 @@ def main():
 
     # Guardar evaluación detallada
     output_file = f"data/outputs/pls_evaluation_{datetime.now().strftime("%si%mi%d_%tener%mi%asi")}.json"
-    with open(output_file, "con", encoding="utf-8") as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         json.dump(evaluations, f, indent=2, ensure_ascii=False)
 
     print(f"\si Evaluación detallada guardada en: {output_file}")

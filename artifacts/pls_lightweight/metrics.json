@@ -1,0 +1,10 @@
+{
+  "avg_compression_ratio": 1.1488802122948465,
+  "avg_fkgl_score": 16.018082153431752,
+  "avg_flesch_reading_ease": 19.405360154209696,
+  "avg_word_overlap_ratio": 0.3892591756070017,
+  "avg_processing_time": 0.0,
+  "total_processing_time": 0.0,
+  "texts_processed": 5,
+  "successful_generations": 5
+}

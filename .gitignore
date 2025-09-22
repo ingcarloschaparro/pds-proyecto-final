@@ -209,7 +209,7 @@ __marimo__/
 
 # Datos grandes: manejados solo por DVC
 data/raw/
-data/processed/
+# data/processed/ - Comentado para permitir versionado selectivo
 data/outputs/
 data/evaluation/
 
@@ -226,15 +226,22 @@ __pycache__/
 Thumbs.db
 
 
-*.csv
-*.json
-*.jsonl
-*.txt
-*.pdf
-*.docx
-*.doc
-*.xls
-*.xlsx
+# Archivos de datos específicos (manejados por DVC)
+data/raw/*.csv
+data/raw/*.json
+data/raw/*.jsonl
+data/raw/*.txt
+data/raw/*.pdf
+data/raw/*.docx
+data/raw/*.doc
+data/raw/*.xls
+data/raw/*.xlsx
+
+# Archivos temporales
+temp_*.csv
+temp_*.json
+temp_*.jsonl
+temp_*.txt
 
 *.md
 *.png
@@ -256,3 +263,4 @@ data/outputs/
 
 # Incluir explícitamente estos archivos
 !src/models/
+/models

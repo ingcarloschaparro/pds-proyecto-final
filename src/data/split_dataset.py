@@ -7,7 +7,7 @@ import pandas as pd
 P = Path("data/processed")
 SRC = P / "dataset_clean_v1.csv"
 if not SRC.exists():
-    raise SystemExit(f"No existe {SRC}. Ejecuta primero el stage"preprocess".")
+    raise SystemExit(f"No existe {SRC}. Ejecuta primero el stage 'preprocess'.")
 
 df = pd.read_csv(SRC)
 

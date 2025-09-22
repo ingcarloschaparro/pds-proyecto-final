@@ -151,7 +151,7 @@ def log_to_mlflow(resultados: Dict[str, Any], experiment_name: str = "pls_classi
 
         # Log métricas detalladas como artifact
         import json
-        with open("classification_report.json", "con") as f:
+        with open("classification_report.json", "w") as f:
             json.dump(resultados["classification_report"], f, indent=2)
         mlflow.log_artifact("classification_report.json")
 
@@ -197,7 +197,7 @@ def guardar_modelo_corregido(resultados: Dict[str, Any], ruta_modelo: str) -> No
         "confusion_matrix": resultados["confusion_matrix"]
     }
 
-    with open(f"{ruta_modelo}/metricas_baseline_corrected.json", "con") as f:
+    with open(f"{ruta_modelo}/metricas_baseline_corrected.json", "w") as f:
         import json
         json.dump(metricas, f, indent=2)
 

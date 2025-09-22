@@ -10,8 +10,8 @@ stages:
       nfiles: 65175
     - path: src/data/build_manifest.py
       hash: md5
-      md5: ad7e3ba9fb28f76a65bb23cc455ed64b
-      size: 1457
+      md5: 280c49b82b22b835a494207c74007b64
+      size: 1508
     outs:
     - path: data/processed/raw_manifest.csv
       hash: md5
@@ -27,34 +27,86 @@ stages:
       nfiles: 65175
     - path: src/data/make_dataset.py
       hash: md5
-      md5: 2deb0077ea56d3c67e0388a552805f3f
-      size: 13037
+      md5: 3a06402d1817fba94def9281a8670e68
+      size: 14048
     outs:
     - path: data/processed/dataset_clean_v1.csv
       hash: md5
-      md5: 3cdb43858306406366c203354ab53318
-      size: 72127250
+      md5: a87cb05bc4be0b004009baa9c0bc03d9
+      size: 73893424
     - path: data/processed/dataset_clean_v1.jsonl
       hash: md5
-      md5: bbcfe7791e2da0cfeb03c5b6aff2e41d
-      size: 97502945
+      md5: 7c038fb61c42912cecfcd2d93b43f401
+      size: 101067809
   split:
     cmd: python src/data/split_dataset.py
     deps:
     - path: data/processed/dataset_clean_v1.csv
       hash: md5
-      md5: 03f690e8a3c4f25be844f62d93f5f6f8
-      size: 70960151
+      md5: a87cb05bc4be0b004009baa9c0bc03d9
+      size: 73893424
     - path: src/data/split_dataset.py
       hash: md5
-      md5: 523fa451beb6e2165711742a0acecc04
-      size: 2926
+      md5: 739cd0f604ef6b0bde782efeb5c98151
+      size: 2906
     outs:
     - path: data/processed/test.csv
       hash: md5
-      md5: f6ff9e594c4cdf347aba3dab2534ae17
-      size: 12688359
+      md5: 88517ba2ae4e0a0ca0a55bc39681a832
+      size: 12802265
     - path: data/processed/train.csv
       hash: md5
-      md5: 22d90b6bf57abd63d6c2f8505b2c3315
-      size: 59914253
+      md5: c8edb166135733eeeea7b3545240c05f
+      size: 61678070
+  train:
+    cmd: python scripts/compare_pls_models.py
+    deps:
+    - path: data/processed/train.csv
+      hash: md5
+      md5: c8edb166135733eeeea7b3545240c05f
+      size: 61678070
+    - path: scripts/compare_pls_models.py
+      hash: md5
+      md5: bae9dd2fd877f48ffb3f849769c005d4
+      size: 23077
+    outs:
+    - path: models
+      hash: md5
+      md5: 53338b4c920f12d5d256aa2812d86fd5.dir
+      size: 1107511665
+      nfiles: 20
+  generate:
+    cmd: python src/models/generate_pls_simple.py --input 
+      data/processed/test.csv --output data/outputs
+    deps:
+    - path: data/processed/test.csv
+      hash: md5
+      md5: 88517ba2ae4e0a0ca0a55bc39681a832
+      size: 12802265
+    - path: src/models/generate_pls_simple.py
+      hash: md5
+      md5: d4a95e39da53b7e79f88dbbbe61766ac
+      size: 16938
+    outs:
+    - path: data/outputs
+      hash: md5
+      md5: 480d35f79599b8db38fee10518476349.dir
+      size: 188073
+      nfiles: 5
+  evaluate:
+    cmd: python src/models/evaluate_simple.py
+    deps:
+    - path: data/processed/test.csv
+      hash: md5
+      md5: 88517ba2ae4e0a0ca0a55bc39681a832
+      size: 12802265
+    - path: src/models/evaluate_simple.py
+      hash: md5
+      md5: 1d9ada4c4188ee7c19cf89ac5c1dcbb1
+      size: 3556
+    outs:
+    - path: data/evaluation
+      hash: md5
+      md5: 560865e881ee85d419795880b1783453.dir
+      size: 859
+      nfiles: 2
