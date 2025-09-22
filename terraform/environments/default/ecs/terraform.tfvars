@@ -5,3 +5,4 @@ ecr_repository_version = "1.0.0"
 ecs_cluster_name = "pds-pls-cluster"
 app_name = "pls-api"
 app_port = 9000
+dashboard_port = 8501

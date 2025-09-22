@@ -201,26 +201,38 @@ Al finalizar la salida del comando será similar a:
 ```
 Outputs:
 
-alb_dns_name = "pls-api-alb-1766951210.us-east-1.elb.amazonaws.com"
+alb_dns_name = "pls-api-alb-1010728665.us-east-1.elb.amazonaws.com"
 alb_zone_id = "Z35SXDOTRQ7X7K"
+dashboard_url = "http://pls-api-alb-1010728665.us-east-1.elb.amazonaws.com:8501"
 ecs_cluster_name = "pds-pls-cluster"
 ecs_service_name = "pls-api-service"
-service_url = "http://pls-api-alb-1766951210.us-east-1.elb.amazonaws.com"
-target_group_arn = "arn:aws:elasticloadbalancing:us-east-1:130470322397:targetgroup/pls-api-tg/38efdea8964f5ce6"
-task_definition_arn = "arn:aws:ecs:us-east-1:130470322397:task-definition/pls-api-task:3"
+service_url = "http://pls-api-alb-1010728665.us-east-1.elb.amazonaws.com"
+target_group_arn_1 = "arn:aws:elasticloadbalancing:us-east-1:130470322397:targetgroup/pls-api-app-tg/0e659433d61b6f58"
+target_group_arn_2 = "arn:aws:elasticloadbalancing:us-east-1:130470322397:targetgroup/pls-api-dashboard-tg/2536b9775c1b884c"
+task_definition_arn = "arn:aws:ecs:us-east-1:130470322397:task-definition/pls-api-task:6"
 ```
 
-Copie el campo **service_url** ya que lo usaremos en el siguiente paso.
+Copie el campo **service_url** y **dashboard_url**, ya que lo usaremos en el siguiente paso.
 
 ### 4. Pruebas y verificaciones:
 
-#### 4.1 API:
-
 **IMPORTANTE**: Antes de iniciar a ejecutar las pruebas y verificaciones, espere unos minutos mientras se aprovisionan los contenedores en ECS, ya que esto puede tomar algunos minutos.
+
+#### 4.1 API:
 
 Para comprobar esto, ingrese a la consola de AWS, ECS, pestaña Tasks y verifique el estado de las tareas (el Health status debe verse Running):
 
-![Consola AWS ECS](./docs/images/AWS_ECS_after.png)
+AWS ECS Service:
+
+![Consola AWS ECS](./docs/images/AWS_ECS_1.png)
+
+![Consola AWS ECS](./docs/images/AWS_ECS_2.png)
+
+AWS ECS Task:
+
+![Consola AWS ECS](./docs/images/AWS_ECS_3.png)
+
+![Consola AWS ECS](./docs/images/AWS_ECS_4.png)
 
 1. Abra la colección de Postman que se encuentra en *test/[PDS]_Proyecto_Final_API.postman_collection.json*.
 2. De clic sobre el nombre de la colección y en la sección Variables, cambie el valor de la variable *main_url* por el valor *service_url* copiado en la sección 3, como se puede ver en la siguiente imagen 
@@ -239,7 +251,11 @@ Para comprobar esto, ingrese a la consola de AWS, ECS, pestaña Tasks y verifiqu
 
 #### 4.2 Tablero:
 
-PENDIENTE.
+Ingrese a la URL que copio en el paso 3 en la variable **dashboard_url**, por ejemplo: http://pls-api-alb-1010728665.us-east-1.elb.amazonaws.com:8501/
+
+![Dashboard 1](./docs/images/Dashboard_1.png)
+
+![Dashboard 2](./docs/images/Dashboard_2.png)
 
 ### 5. Borrar el ambiente de AWS:
 

@@ -23,9 +23,14 @@ output "alb_zone_id" {
   value       = aws_lb.app_lb.zone_id
 }
 
-output "target_group_arn" {
+output "target_group_arn_1" {
   description = "ARN del target group"
-  value       = aws_lb_target_group.app_lb_tg.arn
+  value       = aws_lb_target_group.app_lb_tg_1.arn
+}
+
+output "target_group_arn_2" {
+  description = "ARN del target group"
+  value       = aws_lb_target_group.app_lb_tg_2.arn
 }
 
 output "service_url" {
@@ -33,7 +38,7 @@ output "service_url" {
   value       = "http://${aws_lb.app_lb.dns_name}"
 }
 
-output "https_service_url" {
-  description = "HTTPS URL del servicio (si está habilitado)"
-  value       = "https://${aws_lb.app_lb.dns_name}"
+output "dashboard_url" {
+  description = "URL del Dashboard"
+  value       = "http://${aws_lb.app_lb.dns_name}:${var.dashboard_port}"
 }
