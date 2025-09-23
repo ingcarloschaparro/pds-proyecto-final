@@ -115,7 +115,7 @@ def start_dashboard(port=8501, browser=True):
     cmd = [
         sys.executable, "-m", "streamlit", "run", str(dashboard_path),
         "--server.port", str(port),
-        "--server.address", "localhost"
+        "--server.address", "0.0.0.0"
     ]
     if not browser:
         cmd.append("--server.headless")

@@ -10,6 +10,13 @@ resource "aws_security_group" "app_lb_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    from_port   = 8501
+    to_port     = 8501
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   /*ingress {
     from_port   = 443
     to_port     = 443
@@ -45,8 +52,8 @@ resource "aws_lb" "app_lb" {
   }
 }
 
-resource "aws_lb_target_group" "app_lb_tg" {
-  name        = "${var.app_name}-tg"
+resource "aws_lb_target_group" "app_lb_tg_1" {
+  name        = "${var.app_name}-app-tg"
   port        = var.app_port
   protocol    = "HTTP"
   vpc_id      = data.aws_vpc.default.id
@@ -72,14 +79,45 @@ resource "aws_lb_target_group" "app_lb_tg" {
   depends_on = [aws_lb.app_lb]
 }
 
-resource "aws_lb_listener" "app_lb_lis_http" {
+resource "aws_lb_target_group" "app_lb_tg_2" {
+  name        = "${var.app_name}-dashboard-tg"
+  port        = var.dashboard_port
+  protocol    = "HTTP"
+  vpc_id      = data.aws_vpc.default.id
+  target_type = "ip"
+
+  tags = {
+    Environment = "production"
+    Application = var.app_name
+  }
+
+  depends_on = [aws_lb.app_lb]
+}
+
+resource "aws_lb_listener" "app_lb_lis_http_1" {
   load_balancer_arn = aws_lb.app_lb.arn
   port              = 80
   protocol          = "HTTP"
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.app_lb_tg.arn
+    target_group_arn = aws_lb_target_group.app_lb_tg_1.arn
+  }
+
+  tags = {
+    Environment = "production"
+    Application = var.app_name
+  }
+}
+
+resource "aws_lb_listener" "app_lb_lis_http_2" {
+  load_balancer_arn = aws_lb.app_lb.arn
+  port              = 8501
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.app_lb_tg_2.arn
   }
 
   tags = {
@@ -141,6 +179,11 @@ resource "aws_ecs_task_definition" "main" {
     portMappings = [{
       containerPort = var.app_port
       hostPort      = var.app_port
+      protocol      = "tcp"
+    },
+    {
+      containerPort = var.dashboard_port
+      hostPort      = var.dashboard_port
       protocol      = "tcp"
     }]
 
@@ -257,6 +300,13 @@ resource "aws_security_group" "ecs" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    from_port   = var.dashboard_port
+    to_port     = var.dashboard_port
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -284,9 +334,15 @@ resource "aws_ecs_service" "main" {
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.app_lb_tg.arn
+    target_group_arn = aws_lb_target_group.app_lb_tg_1.arn
     container_name   = var.app_name
     container_port   = var.app_port
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.app_lb_tg_2.arn
+    container_name   = var.app_name
+    container_port   = var.dashboard_port
   }
 
   health_check_grace_period_seconds = 300
@@ -304,8 +360,10 @@ resource "aws_ecs_service" "main" {
   }
 
   depends_on = [
-    aws_lb_listener.app_lb_lis_http,
-    aws_lb_target_group.app_lb_tg
+    aws_lb_listener.app_lb_lis_http_1,
+    aws_lb_listener.app_lb_lis_http_2,
+    aws_lb_target_group.app_lb_tg_1,
+    aws_lb_target_group.app_lb_tg_2
   ]
 
   tags = {

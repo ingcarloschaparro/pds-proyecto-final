@@ -40,6 +40,12 @@ variable "app_port" {
   nullable    = false
 }
 
+variable "dashboard_port" {
+  description = "App Dashboard port"
+  type        = number
+  nullable    = false
+}
+
 
 
 
