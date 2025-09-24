@@ -1,6 +1,13 @@
 """Clasificador para distinguir entre textos por favor si non-por favor Implementa baseline TF-IDF + Logistic Regression si modelo DistilBERT"""
-from src.config.mlflow_remote import apply_tracking_uri as _mlf_apply
-_mlf_apply(experiment="E2-<NombreDelExperimento>")
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
+try:
+    from src.config.mlflow_remote import apply_tracking_uri as _mlf_apply
+    _mlf_apply(experiment="E2-Classifier")
+except ImportError:
+    print("MLflow remote config not found, using local tracking")
 
 import pandas as pd
 import numpy as np
@@ -156,7 +163,7 @@ def guardar_modelo(resultados: Dict[str, Any], ruta_modelo: str) -> None:
         "confusion_matrix": resultados["confusion_matrix"],
     }
 
-    with open(f"{ruta_modelo}/metricas_baseline.json", "con") as f:
+    with open(f"{ruta_modelo}/metricas_baseline.json", "w") as f:
         import json
 
         json.dump(metricas, f, indent=2)

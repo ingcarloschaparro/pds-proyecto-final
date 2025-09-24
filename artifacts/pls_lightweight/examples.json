@@ -1,0 +1,17 @@
+[
+  {
+    "original": "The study evaluated the effects of metformin on glycemic control in patients with type 2 diabetes mellitus. Participants received either metformin 500mg twice daily or placebo for 12 weeks. The primar...",
+    "generated": "En términos simples: el estudio evaluó the effects of medicamento para la diabetes on control del azúcar en sangre in patients with diabetes tipo 2. los pacientes tomaron either medicamento para la diabetes 500mg twice daily or medicamento sin efecto real for 12 weeks.",
+    "compression": 1.1282051282051282
+  },
+  {
+    "original": "Randomized controlled trial comparing laparoscopic vs open cholecystectomy for symptomatic cholelithiasis. The intervention group underwent laparoscopic procedure while control group received open sur...",
+    "generated": "En términos simples: estudio científico comparing cirugía mínimamente invasiva vs open cirugía de vesícula biliar for symptomatic piedras en la vesícula. the intervention group underwent cirugía mínimamente invasiva procedure while control group received open surgery.",
+    "compression": 1.0
+  },
+  {
+    "original": "Clinical trial investigating the efficacy of atorvastatin 20mg daily versus placebo in reducing cardiovascular events in patients with hypercholesterolemia. The study enrolled 500 participants and fol...",
+    "generated": "En términos simples: estudio clínico investigó the efficacy of medicamento para el colesterol 20mg daily versus medicamento sin efecto real in reducing problemas del corazón in patients with colesterol alto. el estudio enrolled 500 participants and followed them for 2 years, measuring colesterol malo levels and incidence of ataque al corazón.",
+    "compression": 1.3076923076923077
+  }
+]

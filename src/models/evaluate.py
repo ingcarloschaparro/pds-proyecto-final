@@ -232,7 +232,7 @@ def guardar_resultados_evaluacion(resultados: Dict[str, Any],
         else:
             resultados_serializables[clave] = valor
 
-    with open(ruta_completa, "con", encoding="utf-8") as f:
+    with open(ruta_completa, "w", encoding="utf-8") as f:
         json.dump(resultados_serializables, f, indent=2, ensure_ascii=False)
 
     print(f"Resultados guardados en: {ruta_completa}")
@@ -244,12 +244,12 @@ def evaluar_clasificador_baseline():
     ruta_metricas = "models/clasificador_baseline/metricas_baseline.json"
 
     if os.path.exists(ruta_metricas):
-        with open(ruta_metricas, "eres") as f:
+        with open(ruta_metricas, "r") as f:
             metricas = json.load(f)
 
         print("=== RESULTADOS CLASIFICADOR BASELINE ===")
-        print(f"F1 Macro: {metricas["f1_macro"]:.4f}")
-        print(f"F1 Weighted: {metricas["f1_weighted"]:.4f}")
+        print(f"F1 Macro: {metricas['f1_macro']:.4f}")
+        print(f"F1 Weighted: {metricas['f1_weighted']:.4f}")
         print("\nMatriz de confusión:")
         for fila in metricas["confusion_matrix"]:
             print(f"{fila}")
@@ -259,6 +259,144 @@ def evaluar_clasificador_baseline():
         print("No se encontraron métricas del clasificador baseline")
         return None
 
+def evaluar_modelos_pls():
+    """Evaluar los 4 modelos PLS usando una muestra pequeña del dataset de test"""
+    print("=== EVALUACIÓN COMPARATIVA DE MODELOS PLS ===")
+    
+    # Importar el comparador de modelos PLS
+    import sys
+    from pathlib import Path
+    sys.path.append(str(Path(__file__).parent.parent.parent))
+    
+    try:
+        from scripts.compare_pls_models import PLSModelComparator
+    except ImportError as e:
+        print(f"Error importando PLSModelComparator: {e}")
+        print("Intentando importación alternativa...")
+        try:
+            import sys
+            sys.path.append("scripts")
+            from compare_pls_models import PLSModelComparator
+        except ImportError as e2:
+            print(f"Error en importación alternativa: {e2}")
+            return
+    
+    # Cargar dataset de test
+    test_file = "data/processed/test.csv"
+    if not os.path.exists(test_file):
+        print(f"Error: No se encontró el archivo {test_file}")
+        return
+    
+    df = pd.read_csv(test_file)
+    print(f"Dataset de test cargado: {len(df)} registros")
+    
+    # Usar solo una muestra pequeña para evaluación rápida
+    sample_size = min(50, len(df))  # Reducir a 50 para evaluación más rápida
+    df_sample = df.sample(n=sample_size, random_state=42)
+    print(f"Evaluando con muestra de {sample_size} registros")
+    
+    # Extraer textos originales
+    textos_originales = df_sample['texto_original'].tolist()
+    
+    # Filtrar textos válidos
+    textos_validos = [texto for texto in textos_originales 
+                     if texto and len(str(texto).strip()) > 10]
+    
+    if not textos_validos:
+        print("No se encontraron textos válidos para evaluación")
+        return
+    
+    print(f"Textos válidos para evaluación: {len(textos_validos)}")
+    
+    # Inicializar comparador de modelos
+    print("\nInicializando modelos PLS...")
+    comparator = PLSModelComparator()
+    
+    # Evaluar cada modelo
+    resultados_modelos = {}
+    
+    for nombre_modelo, config in comparator.models.items():
+        print(f"\n--- Evaluando {config['model_name']} ---")
+        
+        try:
+            # Generar PLS con el modelo
+            pls_generados = []
+            for i, texto in enumerate(textos_validos[:10]):  # Solo 10 textos para evaluación rápida
+                if i % 5 == 0:
+                    print(f"  Procesando texto {i+1}/10...")
+                
+                if config['type'] == 'transformer':
+                    # Usar modelo transformer directamente
+                    if nombre_modelo == 'bart_base':
+                        pls = comparator.models['bart_base']['model'](texto, max_length=100, min_length=20, do_sample=True)
+                    elif nombre_modelo == 'bart_large_cnn':
+                        pls = comparator.models['bart_large_cnn']['model'](texto, max_length=100, min_length=20, do_sample=True)
+                    elif nombre_modelo == 't5_base':
+                        pls = comparator.models['t5_base']['model'](texto, max_length=100, min_length=20, do_sample=True)
+                    else:
+                        pls = "Error: Modelo no encontrado"
+                else:
+                    # Usar PLS Ligero
+                    pls = comparator.generate_simple_pls(texto)
+                
+                pls_generados.append(pls)
+            
+            # Calcular métricas
+            metricas_legibilidad = calcular_metricas_legibilidad(pls_generados)
+            metricas_compresion = calcular_metricas_compresion(textos_validos[:10], pls_generados)
+            
+            # Combinar métricas
+            metricas_completas = {
+                **metricas_legibilidad,
+                **metricas_compresion,
+                "textos_evaluados": len(pls_generados)
+            }
+            
+            resultados_modelos[nombre_modelo] = metricas_completas
+            
+            print(f"  ✅ {config['model_name']} evaluado exitosamente")
+            print(f"     FKGL: {metricas_legibilidad['fkgl_mean']:.2f}")
+            print(f"     Flesch: {metricas_legibilidad['flesch_mean']:.2f}")
+            print(f"     Compresión: {metricas_compresion['ratio_longitud_mean']:.3f}")
+            
+        except Exception as e:
+            print(f"  ❌ Error evaluando {config['model_name']}: {e}")
+            resultados_modelos[nombre_modelo] = {"error": str(e)}
+    
+    # Crear directorio de salida
+    output_dir = "data/evaluation"
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Guardar resultados
+    resultados = {
+        "dataset_info": {
+            "total_registros": len(df),
+            "muestra_evaluada": len(textos_validos),
+            "archivo_origen": test_file
+        },
+        "modelos_evaluados": resultados_modelos,
+        "fecha_evaluacion": pd.Timestamp.now().isoformat()
+    }
+    
+    # Guardar resultados
+    guardar_resultados_evaluacion(resultados, output_dir, "evaluacion_pls_comparativa.json")
+    
+    # Mostrar resumen comparativo
+    print("\n=== RESUMEN COMPARATIVO ===")
+    print(f"Textos evaluados: {len(textos_validos)}")
+    print("\nMétricas por modelo:")
+    
+    for nombre, metricas in resultados_modelos.items():
+        if "error" not in metricas:
+            print(f"\n{nombre}:")
+            print(f"  FKGL: {metricas.get('fkgl_mean', 'N/A'):.2f}")
+            print(f"  Flesch: {metricas.get('flesch_mean', 'N/A'):.2f}")
+            print(f"  Compresión: {metricas.get('ratio_longitud_mean', 'N/A'):.3f}")
+        else:
+            print(f"\n{nombre}: ERROR - {metricas['error']}")
+    
+    print(f"\nResultados guardados en: {output_dir}/evaluacion_pls_comparativa.json")
+
 if __name__ == "__main__":
-    # Ejecutar evaluación del clasificador baseline
-    evaluar_clasificador_baseline()
+    # Ejecutar evaluación de modelos PLS
+    evaluar_modelos_pls()

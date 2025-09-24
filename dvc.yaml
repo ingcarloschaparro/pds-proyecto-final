@@ -27,9 +27,9 @@ stages:
       - data/processed/test.csv
 
   train:
-    cmd: python src/models/train_classifier.py
+    cmd: python scripts/compare_pls_models.py
     deps:
-      - src/models/train_classifier.py
+      - scripts/compare_pls_models.py
       - data/processed/train.csv
     outs:
       - models:
@@ -37,10 +37,9 @@ stages:
           cache: true
 
   generate:
-    cmd: python src/models/generate_pls.py
+    cmd: python src/models/generate_pls_simple.py --input data/processed/test.csv --output data/outputs
     deps:
-      - src/models/generate_pls.py
-      - models
+      - src/models/generate_pls_simple.py
       - data/processed/test.csv
     outs:
       - data/outputs:
@@ -48,10 +47,10 @@ stages:
           cache: true
 
   evaluate:
-    cmd: python src/models/evaluate.py
+    cmd: python src/models/evaluate_simple.py
     deps:
-      - src/models/evaluate.py
-      - data/outputs
+      - src/models/evaluate_simple.py
+      - data/processed/test.csv
     outs:
       - data/evaluation:
           persist: true

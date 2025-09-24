@@ -23,6 +23,7 @@ class PLSModelComparator:
         self.models = {}
         self.test_texts = self._load_test_texts()
         self.setup_mlflow()
+        self.initialize_models()
 
     def _load_test_texts(self) -> List[str]:
         """Cargar textos de prueba médicos"""
@@ -39,9 +40,22 @@ class PLSModelComparator:
         ]
 
     def setup_mlflow(self):
-        """Configurar MLflow"""
-        mlflow.set_tracking_uri("http://52.0.127.25:5001")
-        mlflow.set_experiment("E2-PLS-Models-Comparison")
+        """Configurar MLflow con fallback automático"""
+        # Intentar MLflow remoto primero
+        try:
+            print("🔗 Intentando conectar a MLflow remoto (AWS)...")
+            mlflow.set_tracking_uri("http://52.0.127.25:5001")
+            # Probar la conexión
+            client = mlflow.tracking.MlflowClient()
+            client.list_experiments()
+            mlflow.set_experiment("E2-PLS-Models-Comparison")
+            print("✅ Conectado a MLflow remoto (AWS)")
+        except Exception as e:
+            print(f"❌ Error con MLflow remoto: {e}")
+            print("🔄 Cambiando a MLflow local...")
+            mlflow.set_tracking_uri("file:./mlruns")
+            mlflow.set_experiment("E2-PLS-Models-Comparison")
+            print("✅ Conectado a MLflow local")
 
     def initialize_models(self):
         """Inicializar todos los modelos PLS"""
@@ -123,7 +137,7 @@ class PLSModelComparator:
 
         # 4. PLS Ligero (Rule-based)
         self.models["pls_lightweight"] = {
-            "model": self.generate_simple_pls,
+            "model": None,  # Se manejará en el código de generación
             "type": "rule_based",
             "model_name": "PLS Ligero",
             "size": "Light"
@@ -140,7 +154,7 @@ class PLSModelComparator:
         medical_terms = {
             "metformin": "medicamento para la diabetes",
             "glycemic control": "control del azúcar en sangre",
-            "type a|tambien diabetes mellitus": "diabetes tipo a|tambien",
+            "type 2 diabetes mellitus": "diabetes tipo 2",
             "placebo": "medicamento sin efecto real",
             "HbA1c": "nivel de azúcar en sangre",
             "randomized controlled trial": "estudio científico",
@@ -153,7 +167,7 @@ class PLSModelComparator:
             "hypercholesterolemia": "colesterol alto",
             "LDL cholesterol": "colesterol malo",
             "myocardial infarction": "ataque al corazón",
-            "vitamin el deficiency": "falta de vitamina el",
+            "vitamin d deficiency": "falta de vitamina D",
             "bone mineral density": "densidad ósea",
             "postmenopausal women": "mujeres después de la menopausia",
             "dual-energy ex-ray absorptiometry": "escáner especial de huesos",
@@ -172,7 +186,7 @@ class PLSModelComparator:
 
         # Simplificar estructura
         pls = pls.replace("participants received", "los pacientes tomaron")
-        pls = pls.replace("el study", "el estudio")
+        pls = pls.replace("the study", "el estudio")
         pls = pls.replace("evaluated", "evaluó")
         pls = pls.replace("investigating", "investigó")
         pls = pls.replace("primary outcome", "resultado principal")
@@ -187,7 +201,7 @@ class PLSModelComparator:
             pls = ".".join(sentences[:2]) + "."
 
         # Añadir prefijo explicativo
-        pls = "En términos simples: PLS"
+        pls = f"En términos simples: {pls}"
 
         return pls
 
@@ -255,7 +269,7 @@ class PLSModelComparator:
 
             # Procesar cada texto de prueba
             for i, text in enumerate(self.test_texts, 1):
-                print(f"Procesando texto {en}/5...")
+                print(f"Procesando texto {i}/5...")
 
                 try:
                     start_time = datetime.now()
@@ -263,13 +277,18 @@ class PLSModelComparator:
                     # Generar PLS
                     if model_config["type"] == "transformer":
                         # Para transformers, ajustar parámetros según el texto
-                        max_len = min(100, len(text.split()) // 2)
-                        min_len = max(20, len(text.split()) // 8)
+                        text_words = len(text.split())
+                        max_len = min(100, max(30, text_words // 2))
+                        min_len = min(20, max(10, text_words // 8))
+                        
+                        # Asegurar que min_len < max_len
+                        if min_len >= max_len:
+                            min_len = max(10, max_len - 5)
 
                         summary = model(text, max_length=max_len, min_length=min_len)[0]["summary_text"]
                     else:
-                        # Para rule-based
-                        summary = model(text)
+                        # Para rule-based (PLS Ligero)
+                        summary = self.generate_simple_pls(text)
 
                     end_time = datetime.now()
                     processing_time = (end_time - start_time).total_seconds()
@@ -290,10 +309,10 @@ class PLSModelComparator:
 
                     results.append(result)
 
-                    print(f"Texto {en}: {len(summary.split())} palabras, {processing_time:.2f}asi")
+                    print(f"Texto {i}: {len(summary.split())} palabras, {processing_time:.2f}s")
 
                 except Exception as e:
-                    print(f"Error en texto {en}: {e}")
+                    print(f"Error en texto {i}: {e}")
                     results.append({
                         "text_id": i,
                         "original_text": text,
@@ -367,7 +386,7 @@ class PLSModelComparator:
 
             # Guardar métricas
             metrics_file = f"{artifact_dir}/metrics.json"
-            with open(metrics_file, "con", encoding="utf-8") as f:
+            with open(metrics_file, "w", encoding="utf-8") as f:
                 json.dump(metrics, f, indent=2, ensure_ascii=False)
 
             # Guardar ejemplos de generación
@@ -380,7 +399,7 @@ class PLSModelComparator:
                 })
 
             examples_file = f"{artifact_dir}/examples.json"
-            with open(examples_file, "con", encoding="utf-8") as f:
+            with open(examples_file, "w", encoding="utf-8") as f:
                 json.dump(examples, f, indent=2, ensure_ascii=False)
 
             # Log archivos en MLflow

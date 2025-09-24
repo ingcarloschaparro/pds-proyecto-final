@@ -49,9 +49,9 @@ PLS_CANDIDATES = {
     "pls_text",
 }
 
-# Filtros simples de calidad
-MIN_LEN_TEXT = 30
-MAX_LEN_TEXT = 20000
+# Filtros simples de calidad - Ajustados para ser menos estrictos
+MIN_LEN_TEXT = 10  # Reducido de 30 a 10 caracteres
+MAX_LEN_TEXT = 50000  # Aumentado de 20000 a 50000 caracteres
 
 
 # ----------------- Utilidades -----------------
@@ -62,8 +62,9 @@ def norm(s: str) -> str:
     if not isinstance(s, str):
         s = str(s)
     s = unicodedata.normalize("NFKC", s)
-    s = s.replace("\eres\si", "\si").replace("\eres", "\si")
-    s = "".join(s.split())
+    s = s.replace("\r\n", "\n").replace("\r", "\n")
+    # Solo colapsar espacios múltiples, NO eliminar todos los espacios
+    s = " ".join(s.split())
     return s.strip()
 
 
@@ -147,7 +148,7 @@ def iter_txt(fp: Path) -> Iterator[Dict[str, str]]:
                 "texto_original": norm(src),
                 "resumen": norm(pls),
                 "source": fp.parent.name,
-                "doc_id": f"{fp.name}#como{en+1}",
+                "doc_id": f"{fp.name}#como{i+1}",
                 "split": split,
                 "label": label,
                 "source_dataset": source_dataset,
@@ -162,7 +163,7 @@ def iter_txt(fp: Path) -> Iterator[Dict[str, str]]:
                     "texto_original": "",
                     "resumen": txt,
                     "source": fp.parent.name,
-                    "doc_id": f"{fp.name}#como{en+1}",
+                    "doc_id": f"{fp.name}#como{i+1}",
                     "split": split,
                     "label": label,
                     "source_dataset": source_dataset,
@@ -175,7 +176,7 @@ def iter_txt(fp: Path) -> Iterator[Dict[str, str]]:
                     "texto_original": txt,
                     "resumen": "",
                     "source": fp.parent.name,
-                    "doc_id": f"{fp.name}#como{en+1}",
+                    "doc_id": f"{fp.name}#como{i+1}",
                     "split": split,
                     "label": label,
                     "source_dataset": source_dataset,
@@ -208,7 +209,7 @@ def iter_csv(fp: Path) -> Iterator[Dict[str, str]]:
             "texto_original": texto,
             "resumen": pls,
             "source": fp.parent.name,
-            "doc_id": f"{fp.name}#{en}",
+            "doc_id": f"{fp.name}#{i}",
             "split": split,
             "label": label,
             "source_dataset": source_dataset,
@@ -220,7 +221,7 @@ def iter_csv(fp: Path) -> Iterator[Dict[str, str]]:
 def iter_jsonl(fp: Path) -> Iterator[Dict[str, str]]:
     """Lee .jsonl (un objeto por línea)."""
     source_dataset, source_bucket, split, label = infer_meta_from_path(fp)
-    with fp.open("eres", encoding="utf-8", errors="ignore") as f:
+    with fp.open("r", encoding="utf-8", errors="ignore") as f:
         for i, line in enumerate(f):
             if not line.strip():
                 continue
@@ -238,7 +239,7 @@ def iter_jsonl(fp: Path) -> Iterator[Dict[str, str]]:
                 "texto_original": texto,
                 "resumen": pls,
                 "source": fp.parent.name,
-                "doc_id": f"{fp.name}#{en}",
+                "doc_id": f"{fp.name}#{i}",
                 "split": split,
                 "label": label,
                 "source_dataset": source_dataset,
@@ -270,7 +271,7 @@ def iter_json(fp: Path) -> Iterator[Dict[str, str]]:
                 "texto_original": texto,
                 "resumen": pls,
                 "source": fp.parent.name,
-                "doc_id": f"{fp.name}#{en}",
+                "doc_id": f"{fp.name}#{i}",
                 "split": split,
                 "label": label,
                 "source_dataset": source_dataset,
@@ -305,14 +306,20 @@ def quality_ok(r: Dict[str, str]) -> bool:
     """Acepta filas con texto o resumen (longitud mínima en cualquiera)."""
     txt = (r.get("texto_original", "") or "").strip()
     pls = (r.get("resumen", "") or "").strip()
-    if txt and not (MIN_LEN_TEXT <= len(txt) <= MAX_LEN_TEXT):
+    
+    # Verificar longitud de texto original
+    if txt:
+        txt_ok = MIN_LEN_TEXT <= len(txt) <= MAX_LEN_TEXT
+    else:
         txt_ok = False
+    
+    # Verificar longitud de resumen
+    if pls:
+        pls_ok = MIN_LEN_TEXT <= len(pls) <= MAX_LEN_TEXT
     else:
-        txt_ok = bool(txt)
-    if pls and not (MIN_LEN_TEXT <= len(pls) <= MAX_LEN_TEXT):
         pls_ok = False
-    else:
-        pls_ok = bool(pls)
+    
+    # Aceptar si tiene texto válido O resumen válido
     return txt_ok or pls_ok
 
 
@@ -322,24 +329,35 @@ def save_streaming_jsonl(stem: str = "dataset_clean_v1") -> Path:
     seen = set()
     kept = 0
     total = 0
+    filtered_out = 0
+    duplicates = 0
 
-    with out_jsonl.open("con", encoding="utf-8") as f:
+    with out_jsonl.open("w", encoding="utf-8") as f:
         for r in parse_files():
             total += 1
             if not quality_ok(r):
+                filtered_out += 1
+                if total % 10000 == 0:  # Log cada 10k registros
+                    print(f"[DEBUG] Procesados: {total}, Filtrados: {filtered_out}, Mantenidos: {kept}")
                 continue
             key = (r.get("texto_original", "") + "||" + r.get("resumen", "")).encode(
                 "utf-8"
             )
             h = hashlib.sha256(key).hexdigest()
             if h in seen:
+                duplicates += 1
                 continue
             seen.add(h)
-            f.write(json.dumps(r, ensure_ascii=False) + "\si")
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
             kept += 1
 
     print(
-        f"[bien] wrote {out_jsonl} total_seen={total} kept={kept} deduped={total - kept}"
+        f"[RESULTADO] {out_jsonl}\n"
+        f"  Total procesados: {total}\n"
+        f"  Filtrados por calidad: {filtered_out}\n"
+        f"  Duplicados: {duplicates}\n"
+        f"  Mantenidos: {kept}\n"
+        f"  Tasa de retención: {kept/total*100:.1f}%"
     )
     return out_jsonl
 

@@ -1,0 +1,17 @@
+[
+  {
+    "original": "The study evaluated the effects of metformin on glycemic control in patients with type 2 diabetes mellitus. Participants received either metformin 500mg twice daily or placebo for 12 weeks. The primar...",
+    "generated": "primary outcome was change in HbA1c levels from baseline . participants received either metformin 500mg twice daily or placebo for",
+    "compression": 0.5128205128205128
+  },
+  {
+    "original": "Randomized controlled trial comparing laparoscopic vs open cholecystectomy for symptomatic cholelithiasis. The intervention group underwent laparoscopic procedure while control group received open sur...",
+    "generated": "primary endpoints included operative time, postoperative complications, and length of hospital stay .",
+    "compression": 0.37142857142857144
+  },
+  {
+    "original": "Clinical trial investigating the efficacy of atorvastatin 20mg daily versus placebo in reducing cardiovascular events in patients with hypercholesterolemia. The study enrolled 500 participants and fol...",
+    "generated": "the trial enrolled 500 participants and followed them for 2 years . it measured LDL cholesterol levels and incidence of myocardial infar",
+    "compression": 0.5641025641025641
+  }
+]

@@ -264,7 +264,7 @@ class IntegratedPLSPipeline:
             "classification_report": classifier_results["classification_report"]
         }
 
-        with open(artifacts_dir / "classifier_results.json", "con") as f:
+        with open(artifacts_dir / "classifier_results.json", "w") as f:
             json.dump(classifier_artifacts, f, indent=2)
 
         # Guardar resultados del generador
@@ -272,7 +272,7 @@ class IntegratedPLSPipeline:
         generator_df.to_csv(artifacts_dir / "generator_results.csv", index=False)
 
         # Guardar métricas del pipeline
-        with open(artifacts_dir / "pipeline_metrics.json", "con") as f:
+        with open(artifacts_dir / "pipeline_metrics.json", "w") as f:
             json.dump(pipeline_metrics, f, indent=2)
 
         # Log artifacts en MLflow

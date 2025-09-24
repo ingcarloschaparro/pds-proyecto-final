@@ -1,0 +1,9 @@
+{
+  "pipeline_classifier_accuracy": 0.8743813459870402,
+  "pipeline_classifier_f1_macro": 0.8743308163627839,
+  "pipeline_generator_compression": 1.1452991452991454,
+  "pipeline_generator_tests": 3,
+  "pipeline_overall_score": 1.0098402456430928,
+  "pipeline_components_working": 2,
+  "pipeline_total_components": 2
+}

@@ -312,7 +312,7 @@ def guardar_modelo_distilbert(resultados: Dict[str, Any], ruta_modelo: str) -> N
         "confusion_matrix": resultados["confusion_matrix"],
     }
 
-    with open(f"{ruta_modelo}/metricas_distilbert.json", "con") as f:
+    with open(f"{ruta_modelo}/metricas_distilbert.json", "w") as f:
         json.dump(metricas, f, indent=2)
 
     print(f"Modelo DistilBERT guardado en: {ruta_modelo}")

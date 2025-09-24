@@ -3,8 +3,19 @@
 Generador simple de Plain Language Summaries (PLS)
 Versión elevada del generador simple con CLI completa, métricas y MLflow
 """
-from src.config.mlflow_remote import apply_tracking_uri as _mlf_apply
-_mlf_apply(experiment="E2-Generator")
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
+try:
+    from src.config.mlflow_remote import apply_tracking_uri as _mlf_apply
+    _mlf_apply(experiment="E2-Generator")
+except (ImportError, Exception) as e:
+    print(f"MLflow remote config failed: {e}")
+    print("Using local MLflow tracking")
+    import mlflow
+    mlflow.set_tracking_uri("file:./mlruns")
+    mlflow.set_experiment("E2-Generator")
 
 import os
 import sys
@@ -137,6 +148,8 @@ def main():
     parser.add_argument("--modelo", default="facebook/bart-large-cnn", help="Modelo a usar")
     parser.add_argument("--texto", help="Texto médico a procesar")
     parser.add_argument("--archivo", help="Archivo con textos médicos")
+    parser.add_argument("--input", help="Archivo de entrada (para pipeline DVC)")
+    parser.add_argument("--output", help="Directorio de salida (para pipeline DVC)")
     parser.add_argument("--zero-shot", action="store_true", help="Modo zero-shot con textos de ejemplo")
     parser.add_argument("--config", default="params.generator.yaml", help="Archivo de configuración")
     
@@ -208,6 +221,49 @@ def main():
         print(f"Texto original: {args.texto}")
         print(f"PLS generado: {pls}")
     
+    elif args.input and args.output:
+        # Modo pipeline DVC
+        if not os.path.exists(args.input):
+            print(f"Error: Archivo {args.input} no encontrado")
+            return
+        
+        # Crear directorio de salida si no existe
+        os.makedirs(args.output, exist_ok=True)
+        
+        df = pd.read_csv(args.input)
+        if 'texto_original' not in df.columns:
+            print("Error: El archivo debe tener una columna 'texto_original'")
+            return
+        
+        # Limitar a una muestra pequeña para el pipeline
+        sample_size = min(100, len(df))
+        df_sample = df.sample(n=sample_size, random_state=42)
+        
+        print(f"Procesando muestra de {sample_size} textos desde {args.input} (de {len(df)} total)")
+        resultados = []
+        
+        for idx, (_, row) in enumerate(df_sample.iterrows()):
+            if idx % 20 == 0:
+                print(f"Procesando texto {idx+1}/{sample_size}")
+            
+            texto = row['texto_original']
+            pls = generador.generar_pls(texto, config=config)
+            resultados.append({
+                "id": idx,
+                "texto_original": texto,
+                "pls_generado": pls
+            })
+        
+        # Guardar resultados
+        df_resultados = pd.DataFrame(resultados)
+        output_file = os.path.join(args.output, f"pls_generated_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
+        df_resultados.to_csv(output_file, index=False)
+        print(f"Resultados guardados en: {output_file}")
+        
+        # Estadísticas
+        pls_validos = [r for r in resultados if not r["pls_generado"].startswith("ERROR")]
+        print(f"Estadísticas: {len(pls_validos)}/{len(resultados)} PLS generados exitosamente")
+    
     elif args.archivo:
         # Modo archivo
         if not os.path.exists(args.archivo):
@@ -221,7 +277,7 @@ def main():
         
         resultados = []
         for idx, row in df.iterrows():
-            texto = row['texto']
+            texto = row['texto_original']
             pls = generador.generar_pls(texto, config=config)
             resultados.append({
                 "id": idx,
@@ -236,7 +292,7 @@ def main():
         print(f"Resultados guardados en: {output_file}")
     
     else:
-        print("Error: Debe especificar --texto, --archivo o --zero-shot")
+        print("Error: Debe especificar --texto, --archivo, --input/--output o --zero-shot")
 
 
 def cargar_configuracion(config_path: str = "params.generator.yaml") -> Dict:
